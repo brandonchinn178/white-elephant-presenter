@@ -14,3 +14,4 @@ Features:
 
 * Powered by [Alpine.js](https://alpinejs.dev/)
 * Styled by [Bootstrap](https://getbootstrap.com/) + [Bootswatch](https://bootswatch.com/)
+* Favicon from [freeiconspng](https://www.freeiconspng.com/img/11579)
