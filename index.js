@@ -8,25 +8,50 @@ document.addEventListener('alpine:init', () => {
 })
 
 class PresenterState {
-  constructor(info) {
-    this.phase = info.phase || 'setup'
-    this.players = info.players || []
-  }
+  /***** Loading/saving *****/
 
   static loadFromStorage() {
     if (!window.localStorage) {
       window.alert("Your browser does not support local storage. Your changes will not be saved.")
     }
 
-    const state = window.localStorage.getItem("presenter-state")
-    if (state !== null) {
-      return new PresenterState(state)
+    const state = new PresenterState()
+
+    const data = window.localStorage.getItem("presenter-state")
+    if (data) {
+      state.loadFromData(JSON.parse(data))
     }
 
-    return new PresenterState({})
+    return state
   }
 
   saveToStorage() {
-    window.localStorage.setItem("presenter-state", JSON.stringify(this.state))
+    window.localStorage.setItem("presenter-state", JSON.stringify(this))
+  }
+
+  loadFromData(data) {
+    this.phase = data.phase || 'setup'
+    this.players = data.players || []
+  }
+
+  reset() {
+    this.loadFromData({})
+  }
+
+  /***** Setup phase *****/
+
+  endSetup() {
+    this.requirePhase('setup')
+    this.phase = 'game'
+  }
+
+  /***** Game phase *****/
+
+  /***** Helpers *****/
+
+  requirePhase(expected) {
+    if (this.phase !== expected) {
+      throw new Error(`Expected phase: ${expected}, got: ${this.phase}`)
+    }
   }
 }

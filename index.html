@@ -12,15 +12,27 @@
     <!-- Custom -->
     <script src="index.js"></script>
   </head>
-  <body>
+  <body x-data="PresenterState">
     <nav class="navbar navbar-expand border-bottom" aria-label="main navigation">
         <div class="container-fluid">
             <h1 class="navbar-brand">White Elephant Presenter</h1>
+            <ul class="navbar-nav">
+                <li class="nav-item"><button class="btn btn-danger" @click="state.reset()">Start over</button></li>
+            </ul>
         </div>
     </nav>
-    <div x-data="PresenterState">
-        <p x-text="state.phase"></p>
-        <p x-text="JSON.stringify(state.players)"></p>
+    <div class="container mt-4">
+        <template x-if="state.phase === 'setup'">
+            <div>
+                <h2>Setup!</h2>
+                <button @click="state.endSetup()">Go to game</button>
+            </div>
+        </template>
+        <template x-if="state.phase === 'game'">
+            <div>
+                <h2>Game!</h2>
+            </div>
+        </template>
     </div>
   </body>
 </html>
