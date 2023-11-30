@@ -8,6 +8,10 @@ document.addEventListener('alpine:init', () => {
 })
 
 class PresenterState {
+  constructor() {
+    this.loadFromData({})
+  }
+
   /***** Loading/saving *****/
 
   loadFromData(data) {
@@ -82,6 +86,10 @@ class SetupController {
   }
 
   startGame() {
+    if (this.players.length === 0) {
+      throw new Error('Cannot start game with 0 players')
+    }
+
     this.state.phase = 'game'
     this.state.game.init()
   }
@@ -90,6 +98,17 @@ class SetupController {
 class GameController {
   constructor(state) {
     this.state = state
+  }
+
+  init() {
+    this.state.board =
+      shuffleArray(this.state.players).map(
+        (player, i) => ({
+          index: i,
+          name: player,
+          gift: null,
+        })
+      )
   }
 
   get board() {
@@ -102,15 +121,26 @@ class GameController {
 
   get currentPlayer() {
     // TODO: handle first player at end
-    const player = this.state.board.find(({ gift }) => gift === null)
-    return player ? player.name : null
+    const player = this.board.find(({ gift }) => gift === null)
+    return player ? player : null
   }
 
-  init() {
-    this.state.board =
-      shuffleArray(this.state.players).map(
-        (player) => ({ name: player, gift: null })
-      )
+  isCurrentPlayer(player) {
+    return player.index === this.currentPlayer.index
+  }
+
+  get nextPlayer() {
+    for (let i = this.currentPlayer.index + 1; i < this.board.length; i++) {
+      const player = this.board[i]
+      if (player.gift === null) {
+        return player
+      }
+    }
+    return null
+  }
+
+  isNextPlayer(player) {
+    return player.index === this.nextPlayer.index
   }
 }
 

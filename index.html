@@ -28,7 +28,11 @@
             <div class="container">
                 <div class="row my-4">
                     <div class="col text-center">
-                        <button class="btn btn-success" @click="state.setup.startGame()">
+                        <button
+                            class="btn btn-success"
+                            @click="state.setup.startGame()"
+                            :disabled="state.setup.players.length === 0"
+                        >
                             Start game!
                         </button>
                     </div>
@@ -46,7 +50,7 @@
                             <div class="col-auto p-0 ms-2">
                                 <button
                                     class="btn btn-outline-primary"
-                                    @click="
+                                    @click.prevent="
                                         const player = $refs.addPlayerInput.value
                                         if (player) state.setup.addPlayer(player)
                                         $refs.addPlayerInput.value = ''
@@ -58,20 +62,20 @@
                         </form>
                         <!-- TODO: set max height + make scrollable -->
                         <div>
-                          <template x-for="player in state.setup.players.toReversed()">
-                              <div class="row mb-2">
-                                <div class="col border rounded-2 my-1 py-2">
-                                  <button
-                                    type="button"
-                                    class="btn btn-close bg-danger float-end ms-2"
-                                    aria-label="Remove player"
-                                    @click="state.setup.removePlayer(player)"
-                                  >
-                                  </button>
-                                  <span class="text-break m-0" x-text="player"></span>
+                            <template x-for="player in state.setup.players.toReversed()">
+                                <div class="row mb-2">
+                                    <div class="col border rounded-2 my-1 py-2">
+                                        <button
+                                            type="button"
+                                            class="btn btn-close bg-danger float-end ms-2"
+                                            aria-label="Remove player"
+                                            @click="state.setup.removePlayer(player)"
+                                        >
+                                        </button>
+                                        <span class="text-break m-0" x-text="player"></span>
+                                    </div>
                                 </div>
-                              </div>
-                          </template>
+                            </template>
                         </div>
                     </div>
                     <div class="col">
@@ -82,18 +86,72 @@
             </div>
         </template>
         <template x-if="state.phase === 'game'">
-            <div class="container">
+            <div class="container-fluid">
               <!-- TODO: add "reset" button that prompts user to confirm, then clears game state and goes back to setup screen, with existing setup config prefilled -->
-              <h2 class="text-center" x-show="state.game.isDone">Game finished!</h2>
-              <h2 class="text-center" x-show="state.game.currentPlayer">
-                Current player: <span x-text="state.game.currentPlayer"></span>
-              </h2>
-              <template x-for="player in state.game.board">
-                <div>
-                  <p x-text="`Name: ${player.name}`"></p>
-                  <p x-text="`Gift: ${JSON.stringify(player.gift)}`"></p>
+                <h2 class="text-center" x-show="state.game.isDone">Game finished!</h2>
+                <h2 class="text-center" x-show="state.game.currentPlayer">
+                  Current player: <b x-text="state.game.currentPlayer.name"></b>
+                </h2>
+                <!-- TODO: flow right, wrap to next row -->
+                <div id="game-board" class="d-flex flex-column">
+                    <style>
+                        #game-board .card > * {
+                            padding: 0.5rem 0;
+                        }
+                        #game-board .card p {
+                            margin-top: 0.5rem;
+                            margin-bottom: 0;
+                        }
+                        #game-board .card p:first-child {
+                            margin-top: 0;
+                        }
+                        #game-board .card[is-current-player=true],
+                        #game-board .card[is-current-player=true] * {
+                            background: var(--bs-success-bg-subtle);
+                            border-width: calc(var(--bs-border-width) * 3)!important;
+                        }
+                        #game-board .card[is-next-player=true] {
+                            background: var(--bs-warning-bg-subtle);
+                        }
+                    </style>
+                    <template x-for="player in state.game.board">
+                        <div
+                            class="
+                                card
+                                flex-fill flex-row
+                                m-2 pe-3
+                                border-primary
+                                bg-gradient
+                                fs-5
+                            "
+                            :is-current-player="state.game.isCurrentPlayer(player)"
+                            :is-next-player="state.game.isNextPlayer(player)"
+                        >
+                            <div
+                                class="
+                                    me-2
+                                    border-end border-primary border-2
+                                    text-center
+                                "
+                                style="width: 3em;"
+                            >
+                                <span x-text="'#' + (player.index + 1)"></span>
+                            </div>
+                            <div>
+                                <p class="fw-bold" x-text="player.name"></p>
+                                <template x-if="state.game.isCurrentPlayer(player)">
+                                    <p>It's your turn!</p>
+                                    <!-- TODO: type in new gift -->
+                                </template>
+                                <template x-if="state.game.isNextPlayer(player)">
+                                    <p>You're up next!</p>
+                                </template>
+                                <!-- TODO: show gift -->
+                                <!-- TODO: make gift draggable to person stealing it -->
+                            </div>
+                        </div>
+                    </template>
                 </div>
-              </template>
             </div>
         </template>
     </div>
