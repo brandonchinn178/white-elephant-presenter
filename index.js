@@ -40,6 +40,7 @@ class PresenterState {
   }
 
   reset() {
+    // TODO: show modal instead of default javascript confirm
     if (!confirm('This will clear all the data. Are you sure?')) return
 
     this.loadFromData({})

@@ -18,7 +18,7 @@
             <h1 class="navbar-brand">White Elephant Presenter</h1>
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <button class="btn btn-danger" @click="state.reset()">Start over</button>
+                    <button class="btn btn-danger" @click="state.reset()">Clear data</button>
                 </li>
             </ul>
         </div>
@@ -92,12 +92,8 @@
                 <h2 class="text-center" x-show="state.game.currentPlayer">
                   Current player: <b x-text="state.game.currentPlayer.name"></b>
                 </h2>
-                <!-- TODO: flow right, wrap to next row -->
-                <div id="game-board" class="d-flex flex-column">
+                <div id="game-board" class="d-flex flex-wrap">
                     <style>
-                        #game-board .card > * {
-                            padding: 0.5rem 0;
-                        }
                         #game-board .card p {
                             margin-top: 0.5rem;
                             margin-bottom: 0;
@@ -105,9 +101,11 @@
                         #game-board .card p:first-child {
                             margin-top: 0;
                         }
-                        #game-board .card[is-current-player=true],
-                        #game-board .card[is-current-player=true] * {
+                        #game-board .card[is-current-player=true] {
                             background: var(--bs-success-bg-subtle);
+                        }
+                        #game-board .card[is-current-player=true],
+                        #game-board .card[is-current-player=true] > * {
                             border-width: calc(var(--bs-border-width) * 3)!important;
                         }
                         #game-board .card[is-next-player=true] {
@@ -119,7 +117,7 @@
                             class="
                                 card
                                 flex-fill flex-row
-                                m-2 pe-3
+                                m-2
                                 border-primary
                                 bg-gradient
                                 fs-5
@@ -129,25 +127,31 @@
                         >
                             <div
                                 class="
-                                    me-2
+                                    p-2
                                     border-end border-primary border-2
                                     text-center
                                 "
-                                style="width: 3em;"
                             >
                                 <span x-text="'#' + (player.index + 1)"></span>
                             </div>
-                            <div>
-                                <p class="fw-bold" x-text="player.name"></p>
-                                <template x-if="state.game.isCurrentPlayer(player)">
-                                    <p>It's your turn!</p>
-                                    <!-- TODO: type in new gift -->
-                                </template>
-                                <template x-if="state.game.isNextPlayer(player)">
-                                    <p>You're up next!</p>
-                                </template>
+                            <div class="p-2">
+                                <p>
+                                    <span class="fw-bold" x-text="player.name"></span>
+                                    <template x-if="state.game.isCurrentPlayer(player)">
+                                        <span>&mdash; It's your turn!</span>
+                                    </template>
+                                    <template x-if="state.game.isNextPlayer(player)">
+                                        <span>&mdash; You're up next!</span>
+                                    </template>
+                                </p>
                                 <!-- TODO: show gift -->
-                                <!-- TODO: make gift draggable to person stealing it -->
+                                <div :class="{ invisible: !state.game.isCurrentPlayer(player) }">
+                                    <!-- TODO: on click, prompt() for gift description -->
+                                    <!-- TODO: use modal instead of prompt() -->
+                                    <button class="btn btn-sm btn-outline-primary">Open gift</button>
+                                    <!-- TODO: on click, select gift to steal -->
+                                    <button class="btn btn-sm btn-outline-primary">Steal gift</button>
+                                </div>
                             </div>
                         </div>
                     </template>
