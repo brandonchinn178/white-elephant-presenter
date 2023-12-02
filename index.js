@@ -40,6 +40,10 @@ class PresenterSetupController {
     this.appState = appState
   }
 
+  get settings() {
+    return this.state.settings
+  }
+
   get players() {
     return this.state.players
   }
@@ -124,6 +128,11 @@ class PresenterState {
 
   loadFromData(data) {
     this.phase = data.phase || 'setup'
+    this.settings = data.settings || {
+      maxSteals: 3,
+      allowStealBacks: false,
+      defaultTimerDurationSecs: 30,
+    }
     this.players = data.players || []
     this.board = data.board || []
     this.isStealing = data.isStealing || false
@@ -178,6 +187,10 @@ class PresenterState {
 class PresenterSetupState {
   constructor(state) {
     this.state = state
+  }
+
+  get settings() {
+    return this.state.settings
   }
 
   get players() {

@@ -12,8 +12,13 @@
         <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
         <!-- Custom -->
         <script src="index.js"></script>
+        <style>
+            html, body {
+                height: 100%;
+            }
+        </style>
     </head>
-    <body x-data="PresenterApp">
+    <body x-data="PresenterApp" class="d-flex flex-column">
         <nav class="navbar navbar-expand border-bottom" aria-label="main navigation">
             <div class="container-fluid">
                 <h1 class="navbar-brand">White Elephant Presenter</h1>
@@ -24,10 +29,10 @@
                 </ul>
             </div>
         </nav>
-        <div class="my-4">
+        <div class="flex-fill my-4">
             <template x-if="$app.phase === 'setup'">
-                <div class="container">
-                    <div class="row my-4">
+                <div class="container d-flex flex-column pb-4" style="height: 100%;">
+                    <div class="row mb-4">
                         <div class="col text-center">
                             <button
                                 class="btn btn-success"
@@ -38,17 +43,70 @@
                             </button>
                         </div>
                     </div>
-                    <div class="row">
+                    <div class="row gx-5 flex-fill">
                         <div class="col">
+                            <div class="row mb-3">
+                                <label
+                                    for="settings.maxSteals"
+                                    class="col-9 col-form-label"
+                                >
+                                    Max number of steals
+                                </label>
+                                <div class="col">
+                                    <input
+                                        id="settings.maxSteals"
+                                        class="form-control"
+                                        type="number"
+                                        x-model.debounce="$app.setup.settings.maxSteals"
+                                    >
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <label
+                                    for="settings.defaultTimerDurationSecs"
+                                    class="col-9 col-form-label"
+                                >
+                                    Default timer duration (seconds)
+                                </label>
+                                <div class="col">
+                                    <input
+                                        id="settings.defaultTimerDurationSecs"
+                                        class="form-control"
+                                        type="number"
+                                        x-model.debounce="$app.setup.settings.defaultTimerDurationSecs"
+                                    >
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <div class="form-check form-check-reverse form-switch">
+                                        <label
+                                            for="settings.allowStealBacks"
+                                            class="form-check-label"
+                                        >
+                                            Allow steal-backs?
+                                        </label>
+                                        <input
+                                            id="settings.allowStealBacks"
+                                            class="form-check-input"
+                                            role="switch"
+                                            type="checkbox"
+                                            x-model.debounce="$app.setup.settings.allowStealBacks"
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col border-start">
                             <form class="row mb-2">
-                                <div class="col p-0">
+                                <div class="col pe-0">
                                     <input
                                         class="form-control"
                                         placeholder="Add a player"
                                         x-ref="addPlayerInput"
                                     />
                                 </div>
-                                <div class="col-auto p-0 ms-2">
+                                <div class="col-auto">
                                     <button
                                         class="btn btn-outline-primary"
                                         @click.prevent="
@@ -65,29 +123,28 @@
                             <div>
                                 <template x-for="player in $app.setup.players.toReversed()" :key="player">
                                     <div class="row mb-2">
-                                        <div class="col border rounded-2 my-1 py-2">
-                                            <button
-                                                type="button"
-                                                class="btn btn-close bg-danger float-end ms-2"
-                                                aria-label="Remove player"
-                                                @click="$app.setup.removePlayer(player)"
-                                            >
-                                            </button>
-                                            <span class="text-break m-0" x-text="player"></span>
+                                        <div class="col">
+                                            <div class="border rounded-2 my-1 p-2">
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-close bg-danger float-end ms-2"
+                                                    aria-label="Remove player"
+                                                    @click="$app.setup.removePlayer(player)"
+                                                >
+                                                </button>
+                                                <span class="text-break m-0" x-text="player"></span>
+                                            </div>
                                         </div>
                                     </div>
                                 </template>
                             </div>
-                        </div>
-                        <div class="col">
-                            <p>TODO: Set # of steals</p>
-                            <p>TODO: Set timer duration</p>
                         </div>
                     </div>
                 </div>
             </template>
             <template x-if="$app.phase === 'game'">
                 <div class="container-fluid">
+                    <!-- TODO: add timer -->
                     <!-- TODO: add "reset" button that prompts user to confirm, then clears game state and goes back to setup screen, with existing setup config prefilled -->
                     <h2 class="text-center" x-show="$app.game.isDone">Game finished!</h2>
                     <h2 class="text-center" x-show="$app.game.currentPlayer">
