@@ -205,26 +205,25 @@
                                     </p>
                                     <template x-if="player.gift">
                                         <div>
-                                            <div class="d-flex">
-                                                <span
-                                                    class="d-inline-block mw-100 text-truncate"
-                                                    x-text="player.gift.label"
-                                                    x-init="bootstrap.Tooltip.getOrCreateInstance($el)"
-                                                    data-bs-toggle="tooltip"
-                                                    :data-bs-title="player.gift.label"
-                                                    data-bs-placement="bottom"
-                                                    data-bs-delay='{ "show": 500 }'
-                                                ></span>
+                                            <p
+                                                class="mw-100 text-truncate"
+                                                x-text="player.gift.label"
+                                                x-init="bootstrap.Tooltip.getOrCreateInstance($el)"
+                                                data-bs-toggle="tooltip"
+                                                :data-bs-title="player.gift.label"
+                                                data-bs-placement="bottom"
+                                                data-bs-delay='{ "show": 500 }'
+                                            ></p>
+                                            <div x-show="$app.game.isStealing && player.gift.stealsLeft > 0">
                                                 <button
-                                                    x-show="$app.game.isStealing && player.gift.stealsLeft > 0"
-                                                    class="
-                                                        btn btn-sm btn-info
-                                                        ms-2
-                                                    "
+                                                    class="btn btn-sm btn-secondary"
                                                     @click="$app.game.stealGiftFrom(player)"
                                                 >
                                                     Steal
                                                 </button>
+                                                <i class="ms-2 fs-6">
+                                                    (Steals left: <span x-text="player.gift.stealsLeft"></span>)
+                                                </i>
                                             </div>
                                         </div>
                                     </template>
@@ -244,12 +243,9 @@
                                             </button>
                                         </div>
                                         <div x-show="$app.game.isStealing">
-                                            <b><i>Choose a gift to steal!</i></b>
+                                            <p><b><i>Choose a gift to steal!</i></b></p>
                                             <button
-                                                class="
-                                                    btn btn-sm btn-danger
-                                                    ms-2
-                                                "
+                                                class="btn btn-sm btn-danger"
                                                 @click="$app.game.cancelSteal()"
                                             >
                                                 Cancel
