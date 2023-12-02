@@ -230,13 +230,13 @@
                                     <div x-show="$app.game.isCurrentPlayer(player)">
                                         <div x-show="!$app.game.isStealing">
                                             <button
-                                                class="btn btn-sm btn-outline-primary"
+                                                class="btn btn-sm btn-primary"
                                                 @click="$app.game.promptGift()"
                                             >
                                                 Open gift
                                             </button>
                                             <button
-                                                class="btn btn-sm btn-outline-primary"
+                                                class="btn btn-sm btn-secondary"
                                                 @click="$app.game.startSteal()"
                                             >
                                                 Steal gift
