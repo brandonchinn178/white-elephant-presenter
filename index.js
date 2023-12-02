@@ -84,11 +84,11 @@ class PresenterGameController {
   }
 
   get currentPlayer() {
-    return this.state.currentPlayer
+    return this.state.getCurrentPlayer()
   }
 
   get nextPlayer() {
-    return this.state.nextPlayer
+    return this.state.getNextPlayer()
   }
 
   isCurrentPlayer(player) {
@@ -110,8 +110,12 @@ class PresenterGameController {
     this.state.startSteal()
   }
 
-  stealGiftFrom(victim) {
-    this.state.stealGiftFrom(victim)
+  canStealFrom(targetPlayer) {
+    return this.state.canStealFrom(targetPlayer)
+  }
+
+  stealGiftFrom(targetPlayer) {
+    this.state.stealGiftFrom(targetPlayer)
   }
 
   cancelSteal() {
@@ -226,6 +230,10 @@ class PresenterGameState {
       )
   }
 
+  get settings() {
+    return this.state.settings
+  }
+
   get board() {
     return this.state.board
   }
@@ -235,17 +243,18 @@ class PresenterGameState {
   }
 
   get isDone() {
-    return this.currentPlayer === null
+    return this.getCurrentPlayer() === null
   }
 
-  get currentPlayer() {
+  getCurrentPlayer() {
     // TODO: handle first player at end
     const player = this.board.find(({ gift }) => gift === null)
     return player ? player : null
   }
 
-  get nextPlayer() {
-    for (let i = this.currentPlayer.index + 1; i < this.board.length; i++) {
+  getNextPlayer() {
+    const currentPlayer = this.getCurrentPlayer()
+    for (let i = currentPlayer.index + 1; i < this.board.length; i++) {
       const player = this.board[i]
       if (player.gift === null) {
         return player
@@ -255,17 +264,21 @@ class PresenterGameState {
   }
 
   isCurrentPlayer(player) {
-    return this.currentPlayer && player.index === this.currentPlayer.index
+    const currentPlayer = this.getCurrentPlayer()
+    return currentPlayer && player.index === currentPlayer.index
   }
 
   isNextPlayer(player) {
-    return this.nextPlayer && player.index === this.nextPlayer.index
+    const nextPlayer = this.getNextPlayer()
+    return nextPlayer && player.index === nextPlayer.index
   }
 
   setGiftForCurrentPlayer(gift) {
-    this.currentPlayer.gift = {
+    const currentPlayer = this.getCurrentPlayer()
+    currentPlayer.gift = {
       label: gift,
-      stealsLeft: this.state.settings.maxSteals,
+      stealsLeft: this.settings.maxSteals,
+      lastOwner: null,
     }
   }
 
@@ -273,21 +286,38 @@ class PresenterGameState {
     this.state.isStealing = true
   }
 
-  stealGiftFrom(victim) {
-    if (victim.gift === null) {
-      throw new Error(`Player '${victim}' does not have a gift!`)
+  canStealFrom(targetPlayer) {
+    if (targetPlayer.gift.stealsLeft <= 0) {
+      return false
     }
 
-    if (victim.gift.stealsLeft <= 0) {
-      throw new Error(`Gift '${victim.gift.label}' cannot be stolen!`)
+    if (!this.settings.allowStealBacks) {
+      if (targetPlayer.gift.lastOwner === this.getCurrentPlayer()) {
+        return false
+      }
     }
 
-    // TODO: prevent steal-back (from config)
+    return true
+  }
 
-    const currentPlayer = this.currentPlayer
-    currentPlayer.gift = victim.gift
-    victim.gift = null
+  stealGiftFrom(targetPlayer) {
+    if (targetPlayer.gift === null) {
+      throw new Error(`Player '${targetPlayer}' does not have a gift!`)
+    }
+
+    if (!this.canStealFrom(targetPlayer)) {
+      throw new Error(`Gift '${targetPlayer.gift.label}' cannot be stolen!`)
+    }
+
+    const currentPlayer = this.getCurrentPlayer()
+
+    // steal gift
+    currentPlayer.gift = targetPlayer.gift
+    targetPlayer.gift = null
+
+    // update gift
     currentPlayer.gift.stealsLeft--
+    currentPlayer.gift.lastOwner = targetPlayer
 
     this.stopSteal()
   }

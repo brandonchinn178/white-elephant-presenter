@@ -214,7 +214,7 @@
                                                 data-bs-placement="bottom"
                                                 data-bs-delay='{ "show": 500 }'
                                             ></p>
-                                            <div x-show="$app.game.isStealing && player.gift.stealsLeft > 0">
+                                            <div x-show="$app.game.isStealing && $app.game.canStealFrom(player)">
                                                 <button
                                                     class="btn btn-sm btn-secondary"
                                                     @click="$app.game.stealGiftFrom(player)"
