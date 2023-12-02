@@ -71,6 +71,10 @@ class PresenterGameController {
     return this.state.board
   }
 
+  get isStealing() {
+    return this.state.isStealing
+  }
+
   get isDone() {
     return this.state.isDone
   }
@@ -79,16 +83,35 @@ class PresenterGameController {
     return this.state.currentPlayer
   }
 
-  isCurrentPlayer(player) {
-    return this.state.isCurrentPlayer(player)
-  }
-
   get nextPlayer() {
     return this.state.nextPlayer
   }
 
+  isCurrentPlayer(player) {
+    return this.state.isCurrentPlayer(player)
+  }
+
   isNextPlayer(player) {
     return this.state.isNextPlayer(player)
+  }
+
+  promptGift() {
+    // TODO: use modal instead of prompt()
+    const gift = prompt('Type in the gift:')
+    if (!gift) return
+    this.state.setGiftForCurrentPlayer(gift)
+  }
+
+  startSteal() {
+    this.state.startSteal()
+  }
+
+  stealGiftFrom(victim) {
+    this.state.stealGiftFrom(victim)
+  }
+
+  cancelSteal() {
+    this.state.stopSteal()
   }
 }
 
@@ -103,6 +126,7 @@ class PresenterState {
     this.phase = data.phase || 'setup'
     this.players = data.players || []
     this.board = data.board || []
+    this.isStealing = data.isStealing || false
   }
 
   reset() {
@@ -138,6 +162,8 @@ class PresenterState {
   }
 
   get game() {
+    // this currently throws errors if resetting in a game
+    // https://github.com/alpinejs/alpine/discussions/3900
     this.expectPhase('game')
     return new PresenterGameState(this)
   }
@@ -191,6 +217,10 @@ class PresenterGameState {
     return this.state.board
   }
 
+  get isStealing() {
+    return this.state.isStealing
+  }
+
   get isDone() {
     return this.currentPlayer === null
   }
@@ -199,10 +229,6 @@ class PresenterGameState {
     // TODO: handle first player at end
     const player = this.board.find(({ gift }) => gift === null)
     return player ? player : null
-  }
-
-  isCurrentPlayer(player) {
-    return player.index === this.currentPlayer.index
   }
 
   get nextPlayer() {
@@ -215,8 +241,32 @@ class PresenterGameState {
     return null
   }
 
+  isCurrentPlayer(player) {
+    return this.currentPlayer && player.index === this.currentPlayer.index
+  }
+
   isNextPlayer(player) {
-    return player.index === this.nextPlayer.index
+    return this.nextPlayer && player.index === this.nextPlayer.index
+  }
+
+  setGiftForCurrentPlayer(gift) {
+    this.currentPlayer.gift = gift
+  }
+
+  startSteal() {
+    this.state.isStealing = true
+  }
+
+  stealGiftFrom(victim) {
+    // TODO: track gift steals left (from config)
+    // TODO: prevent steal-back (from config)
+    this.currentPlayer.gift = victim.gift
+    victim.gift = null
+    this.stopSteal()
+  }
+
+  stopSteal() {
+    this.state.isStealing = false
   }
 }
 
