@@ -12,26 +12,26 @@
         <!-- Custom -->
         <script src="index.js"></script>
     </head>
-    <body x-data="PresenterState">
+    <body x-data="PresenterApp">
         <nav class="navbar navbar-expand border-bottom" aria-label="main navigation">
             <div class="container-fluid">
                 <h1 class="navbar-brand">White Elephant Presenter</h1>
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <button class="btn btn-danger" @click="state.reset()">Clear data</button>
+                        <button class="btn btn-danger" @click="$app.reset()">Clear data</button>
                     </li>
                 </ul>
             </div>
         </nav>
         <div class="my-4">
-            <template x-if="state.phase === 'setup'">
+            <template x-if="$app.phase === 'setup'">
                 <div class="container">
                     <div class="row my-4">
                         <div class="col text-center">
                             <button
                                 class="btn btn-success"
-                                @click="state.setup.startGame()"
-                                :disabled="state.setup.players.length === 0"
+                                @click="$app.setup.startGame()"
+                                :disabled="$app.setup.players.length === 0"
                             >
                                 Start game!
                             </button>
@@ -52,7 +52,7 @@
                                         class="btn btn-outline-primary"
                                         @click.prevent="
                                             const player = $refs.addPlayerInput.value
-                                            if (player) state.setup.addPlayer(player)
+                                            if (player) $app.setup.addPlayer(player)
                                             $refs.addPlayerInput.value = ''
                                         "
                                     >
@@ -62,14 +62,14 @@
                             </form>
                             <!-- TODO: set max height + make scrollable -->
                             <div>
-                                <template x-for="player in state.setup.players.toReversed()">
+                                <template x-for="player in $app.setup.players.toReversed()">
                                     <div class="row mb-2">
                                         <div class="col border rounded-2 my-1 py-2">
                                             <button
                                                 type="button"
                                                 class="btn btn-close bg-danger float-end ms-2"
                                                 aria-label="Remove player"
-                                                @click="state.setup.removePlayer(player)"
+                                                @click="$app.setup.removePlayer(player)"
                                             >
                                             </button>
                                             <span class="text-break m-0" x-text="player"></span>
@@ -85,12 +85,12 @@
                     </div>
                 </div>
             </template>
-            <template x-if="state.phase === 'game'">
+            <template x-if="$app.phase === 'game'">
                 <div class="container-fluid">
                     <!-- TODO: add "reset" button that prompts user to confirm, then clears game state and goes back to setup screen, with existing setup config prefilled -->
-                    <h2 class="text-center" x-show="state.game.isDone">Game finished!</h2>
-                    <h2 class="text-center" x-show="state.game.currentPlayer">
-                        Current player: <b x-text="state.game.currentPlayer.name"></b>
+                    <h2 class="text-center" x-show="$app.game.isDone">Game finished!</h2>
+                    <h2 class="text-center" x-show="$app.game.currentPlayer">
+                      Current player: <b x-text="$app.game.currentPlayer.name"></b>
                     </h2>
                     <div id="game-board" class="d-flex flex-wrap">
                         <style>
@@ -112,7 +112,7 @@
                                 background: var(--bs-warning-bg-subtle);
                             }
                         </style>
-                        <template x-for="player in state.game.board">
+                        <template x-for="player in $app.game.board">
                             <div
                                 class="
                                     card
@@ -122,8 +122,8 @@
                                     bg-gradient
                                     fs-5
                                 "
-                                :is-current-player="state.game.isCurrentPlayer(player)"
-                                :is-next-player="state.game.isNextPlayer(player)"
+                                :is-current-player="$app.game.isCurrentPlayer(player)"
+                                :is-next-player="$app.game.isNextPlayer(player)"
                             >
                                 <div
                                     class="
@@ -137,15 +137,15 @@
                                 <div class="p-2">
                                     <p>
                                         <span class="fw-bold" x-text="player.name"></span>
-                                        <template x-if="state.game.isCurrentPlayer(player)">
+                                        <template x-if="$app.game.isCurrentPlayer(player)">
                                             <span>&mdash; It's your turn!</span>
                                         </template>
-                                        <template x-if="state.game.isNextPlayer(player)">
+                                        <template x-if="$app.game.isNextPlayer(player)">
                                             <span>&mdash; You're up next!</span>
                                         </template>
                                     </p>
                                     <!-- TODO: show gift -->
-                                    <div :class="{ invisible: !state.game.isCurrentPlayer(player) }">
+                                    <div :class="{ invisible: !$app.game.isCurrentPlayer(player) }">
                                         <!-- TODO: on click, prompt() for gift description -->
                                         <!-- TODO: use modal instead of prompt() -->
                                         <button class="btn btn-sm btn-outline-primary">Open gift</button>

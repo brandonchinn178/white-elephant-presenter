@@ -1,24 +1,115 @@
 document.addEventListener('alpine:init', () => {
-  Alpine.data('PresenterState', () => ({
-    state: PresenterState.loadFromStorage(),
-    init() {
-      this.$watch('state', () => this.state.saveToStorage())
-    },
-  }))
+  Alpine.data('PresenterApp', () => new PresenterApp())
 })
+
+class PresenterApp {
+  constructor() {
+    this.$app = this
+    this.state = PresenterState.loadFromStorage()
+  }
+
+  init() {
+    this.$watch('state', () => this.state.saveToStorage())
+  }
+
+  reset() {
+    // TODO: show modal instead of default javascript confirm
+    if (!confirm('This will clear all the data. Are you sure?')) return
+
+    this.state.reset()
+  }
+
+  /***** Phase-specific controllers *****/
+
+  get phase() {
+    return this.state.phase
+  }
+
+  get setup() {
+    return new PresenterSetupController(this.state.setup, this.state)
+  }
+
+  get game() {
+    return new PresenterGameController(this.state.game)
+  }
+}
+
+class PresenterSetupController {
+  constructor(state, appState) {
+    this.state = state
+    this.appState = appState
+  }
+
+  get players() {
+    return this.state.players
+  }
+
+  addPlayer(player) {
+    this.state.addPlayer(player)
+  }
+
+  removePlayer(player) {
+    this.state.removePlayer(player)
+  }
+
+  startGame() {
+    if (this.state.players.length === 0) {
+      throw new Error('Cannot start game with 0 players')
+    }
+
+    this.appState.phase = 'game'
+    this.appState.game.init()
+  }
+}
+
+class PresenterGameController {
+  constructor(state) {
+    this.state = state
+  }
+
+  get board() {
+    return this.state.board
+  }
+
+  get isDone() {
+    return this.state.isDone
+  }
+
+  get currentPlayer() {
+    return this.state.currentPlayer
+  }
+
+  isCurrentPlayer(player) {
+    return this.state.isCurrentPlayer(player)
+  }
+
+  get nextPlayer() {
+    return this.state.nextPlayer
+  }
+
+  isNextPlayer(player) {
+    return this.state.isNextPlayer(player)
+  }
+}
+
+/***** Game state *****/
 
 class PresenterState {
   constructor() {
     this.loadFromData({})
   }
 
-  /***** Loading/saving *****/
-
   loadFromData(data) {
     this.phase = data.phase || 'setup'
     this.players = data.players || []
     this.board = data.board || []
   }
+
+  reset() {
+    this.loadFromData({})
+  }
+
+  /***** Persistence *****/
 
   static loadFromStorage() {
     if (!window.localStorage) {
@@ -39,23 +130,16 @@ class PresenterState {
     window.localStorage.setItem("presenter-state", JSON.stringify(this))
   }
 
-  reset() {
-    // TODO: show modal instead of default javascript confirm
-    if (!confirm('This will clear all the data. Are you sure?')) return
-
-    this.loadFromData({})
-  }
-
-  /***** Phase controllers *****/
+  /***** Phase-specific state *****/
 
   get setup() {
     this.expectPhase('setup')
-    return new SetupController(this)
+    return new PresenterSetupState(this)
   }
 
   get game() {
     this.expectPhase('game')
-    return new GameController(this)
+    return new PresenterGameState(this)
   }
 
   expectPhase(expected) {
@@ -65,7 +149,7 @@ class PresenterState {
   }
 }
 
-class SetupController {
+class PresenterSetupState {
   constructor(state) {
     this.state = state
   }
@@ -85,18 +169,9 @@ class SetupController {
   removePlayer(player) {
     this.state.players = this.state.players.filter((p) => p !== player)
   }
-
-  startGame() {
-    if (this.players.length === 0) {
-      throw new Error('Cannot start game with 0 players')
-    }
-
-    this.state.phase = 'game'
-    this.state.game.init()
-  }
 }
 
-class GameController {
+class PresenterGameState {
   constructor(state) {
     this.state = state
   }
@@ -144,6 +219,8 @@ class GameController {
     return player.index === this.nextPlayer.index
   }
 }
+
+/***** Utilities *****/
 
 /**
  * Return a new array containing the elements in the given array shuffled randomly.
