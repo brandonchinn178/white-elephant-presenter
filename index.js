@@ -263,7 +263,10 @@ class PresenterGameState {
   }
 
   setGiftForCurrentPlayer(gift) {
-    this.currentPlayer.gift = gift
+    this.currentPlayer.gift = {
+      label: gift,
+      stealsLeft: this.state.settings.maxSteals,
+    }
   }
 
   startSteal() {
@@ -271,10 +274,21 @@ class PresenterGameState {
   }
 
   stealGiftFrom(victim) {
-    // TODO: track gift steals left (from config)
+    if (victim.gift === null) {
+      throw new Error(`Player '${victim}' does not have a gift!`)
+    }
+
+    if (victim.gift.stealsLeft <= 0) {
+      throw new Error(`Gift '${victim.gift.label}' cannot be stolen!`)
+    }
+
     // TODO: prevent steal-back (from config)
-    this.currentPlayer.gift = victim.gift
+
+    const currentPlayer = this.currentPlayer
+    currentPlayer.gift = victim.gift
     victim.gift = null
+    currentPlayer.gift.stealsLeft--
+
     this.stopSteal()
   }
 
