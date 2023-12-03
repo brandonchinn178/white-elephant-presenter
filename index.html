@@ -23,7 +23,17 @@
             <div class="container-fluid">
                 <h1 class="navbar-brand">White Elephant Presenter</h1>
                 <ul class="navbar-nav">
-                    <li class="nav-item">
+                    <li class="nav-item ms-2">
+                        <a
+                            class="btn btn-secondary"
+                            href="https://www.whiteelephantrules.com/"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            View rules
+                        </a>
+                    </li>
+                    <li class="nav-item ms-2">
                         <button class="btn btn-danger" @click="$app.reset()">Clear data</button>
                     </li>
                 </ul>
@@ -119,7 +129,6 @@
                                     </button>
                                 </div>
                             </form>
-                            <!-- TODO: set max height + make scrollable -->
                             <div>
                                 <template x-for="player in $app.setup.players.toReversed()" :key="player">
                                     <div class="row mb-2">
