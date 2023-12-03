@@ -80,7 +80,11 @@ class PresenterGameController {
   }
 
   get isDone() {
-    return this.state.isDone
+    return this.state.isDone()
+  }
+
+  get isFinalSwap() {
+    return this.state.isFinalSwap()
   }
 
   get currentPlayer() {
@@ -121,6 +125,10 @@ class PresenterGameController {
   cancelSteal() {
     this.state.stopSteal()
   }
+
+  passFinalSwap() {
+    this.state.endFinalSwap()
+  }
 }
 
 /***** Game state *****/
@@ -140,6 +148,7 @@ class PresenterState {
     this.players = data.players || []
     this.board = data.board || []
     this.isStealing = data.isStealing || false
+    this.didFirstPlayerGoAgain = data.didFirstPlayerGoAgain || false
   }
 
   reset() {
@@ -242,25 +251,55 @@ class PresenterGameState {
     return this.state.isStealing
   }
 
-  get isDone() {
+  isDone() {
     return this.getCurrentPlayer() === null
   }
 
   getCurrentPlayer() {
-    // TODO: handle first player at end
+    // find first player with no gift
     const player = this.board.find(({ gift }) => gift === null)
-    return player ? player : null
+    if (player) {
+      return player
+    }
+
+    // if first player hasn't done their final swap yet, the first player
+    // is the current player again
+    if (!this.state.didFirstPlayerGoAgain) {
+      return this.board[0]
+    }
+
+    return null
   }
 
   getNextPlayer() {
     const currentPlayer = this.getCurrentPlayer()
+    if (!currentPlayer) {
+      return null
+    }
+
+    // find first player after current player with no gift
     for (let i = currentPlayer.index + 1; i < this.board.length; i++) {
       const player = this.board[i]
       if (player.gift === null) {
         return player
       }
     }
+
+    // if first player hasn't done their final swap yet, return the first player
+    if (!this.state.didFirstPlayerGoAgain && currentPlayer.index !== 0) {
+      return this.board[0]
+    }
+
     return null
+  }
+
+  isFinalSwap() {
+    const currentPlayer = this.getCurrentPlayer()
+    return (
+      !this.state.didFirstPlayerGoAgain
+      && currentPlayer.index === 0
+      && currentPlayer.gift !== null
+    )
   }
 
   isCurrentPlayer(player) {
@@ -310,20 +349,30 @@ class PresenterGameState {
     }
 
     const currentPlayer = this.getCurrentPlayer()
+    const isFinalSwap = this.isFinalSwap()
 
-    // steal gift
+    // steal/swap gifts
+    const currentGift = currentPlayer.gift
     currentPlayer.gift = targetPlayer.gift
-    targetPlayer.gift = null
+    targetPlayer.gift = currentGift
 
     // update gift
     currentPlayer.gift.stealsLeft--
     currentPlayer.gift.lastOwner = targetPlayer
 
     this.stopSteal()
+
+    if (isFinalSwap) {
+      this.endFinalSwap()
+    }
   }
 
   stopSteal() {
     this.state.isStealing = false
+  }
+
+  endFinalSwap() {
+    this.state.didFirstPlayerGoAgain = true
   }
 }
 

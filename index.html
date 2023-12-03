@@ -156,9 +156,11 @@
                     <!-- TODO: add timer -->
                     <!-- TODO: add "reset" button that prompts user to confirm, then clears game state and goes back to setup screen, with existing setup config prefilled -->
                     <h2 class="text-center" x-show="$app.game.isDone">Game finished!</h2>
-                    <h2 class="text-center" x-show="$app.game.currentPlayer">
-                      Current player: <b x-text="$app.game.currentPlayer.name"></b>
-                    </h2>
+                    <template x-if="$app.game.currentPlayer">
+                        <h2 class="text-center">
+                          Current player: <b x-text="$app.game.currentPlayer.name"></b>
+                        </h2>
+                    </template>
                     <div id="game-board" class="d-flex flex-wrap">
                         <style>
                             #game-board .card p {
@@ -240,7 +242,15 @@
                                         <div x-show="!$app.game.isStealing">
                                             <button
                                                 class="btn btn-sm btn-primary"
+                                                @click="$app.game.passFinalSwap()"
+                                                x-show="$app.game.isFinalSwap"
+                                            >
+                                                Pass
+                                            </button>
+                                            <button
+                                                class="btn btn-sm btn-primary"
                                                 @click="$app.game.promptGift()"
+                                                x-show="!$app.game.isFinalSwap"
                                             >
                                                 Open gift
                                             </button>
