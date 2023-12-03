@@ -34,7 +34,13 @@
                         </a>
                     </li>
                     <li class="nav-item ms-2">
-                        <button class="btn btn-danger" @click="$app.reset()">Clear data</button>
+                        <button
+                            class="btn btn-danger"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modal-clear-data"
+                        >
+                            Clear data
+                        </button>
                     </li>
                 </ul>
             </div>
@@ -249,8 +255,9 @@
                                             </button>
                                             <button
                                                 class="btn btn-sm btn-primary"
-                                                @click="$app.game.promptGift()"
                                                 x-show="!$app.game.isFinalSwap"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modal-open-gift"
                                             >
                                                 Open gift
                                             </button>
@@ -277,6 +284,83 @@
                     </div>
                 </div>
             </template>
+            <div
+                id='modal-open-gift'
+                class="modal"
+                tabindex="-1"
+                x-ref="openGiftModal"
+                x-init="
+                    $el.addEventListener('hidden.bs.modal', () => {
+                        $refs.openGiftInput.value = ''
+                    })
+                    $el.addEventListener('shown.bs.modal', () => {
+                        $refs.openGiftInput.focus()
+                    })
+                "
+                aria-labelledby="modal-open-gift-label"
+                aria-hidden="true"
+            >
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form>
+                            <div id="modal-open-gift-label" class="modal-header">
+                                Open a gift
+                            </div>
+                            <div class="modal-body">
+                                <label for="open-gift" class="col-form-label">
+                                    Type in the gift that was opened:
+                                </label>
+                                <input id="open-gift" class="form-control" x-ref="openGiftInput">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary"
+                                    @click.prevent="
+                                        const gift = $refs.openGiftInput.value
+                                        if (gift) {
+                                            $app.game.setGiftForCurrentPlayer(gift)
+                                            bootstrap.Modal.getInstance($refs.openGiftModal).hide()
+                                        }
+                                    "
+                                >
+                                    Save
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div
+                id='modal-clear-data'
+                class="modal"
+                tabindex="-1"
+                x-ref="clearDataModal"
+                aria-label="Clear data"
+                aria-hidden="true"
+            >
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-body">
+                            This will clear all the data. Are you sure?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button
+                                type="button"
+                                class="btn btn-danger"
+                                @click="
+                                    $app.reset()
+                                    bootstrap.Modal.getInstance($refs.clearDataModal).hide()
+                                "
+                            >
+                                Clear data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </body>
 </html>

@@ -13,9 +13,6 @@ class PresenterApp {
   }
 
   reset() {
-    // TODO: show modal instead of default javascript confirm
-    if (!confirm('This will clear all the data. Are you sure?')) return
-
     this.state.reset()
   }
 
@@ -103,10 +100,7 @@ class PresenterGameController {
     return this.state.isNextPlayer(player)
   }
 
-  promptGift() {
-    // TODO: use modal instead of prompt()
-    const gift = prompt('Type in the gift:')
-    if (!gift) return
+  setGiftForCurrentPlayer(gift) {
     this.state.setGiftForCurrentPlayer(gift)
   }
 
@@ -331,7 +325,8 @@ class PresenterGameState {
     }
 
     if (!this.settings.allowStealBacks) {
-      if (targetPlayer.gift.lastOwner === this.getCurrentPlayer()) {
+      const currentPlayer = this.getCurrentPlayer()
+      if (targetPlayer.gift.lastOwner === currentPlayer.name) {
         return false
       }
     }
@@ -358,7 +353,7 @@ class PresenterGameState {
 
     // update gift
     currentPlayer.gift.stealsLeft--
-    currentPlayer.gift.lastOwner = targetPlayer
+    currentPlayer.gift.lastOwner = targetPlayer.name
 
     this.stopSteal()
 
