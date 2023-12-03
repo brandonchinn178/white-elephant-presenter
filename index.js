@@ -12,8 +12,12 @@ class PresenterApp {
     this.$watch('state', () => this.state.saveToStorage())
   }
 
-  reset() {
-    this.state.reset()
+  resetAll() {
+    this.state.resetAllData()
+  }
+
+  resetGame() {
+    this.state.resetGameData()
   }
 
   /***** Phase-specific controllers *****/
@@ -145,8 +149,15 @@ class PresenterState {
     this.didFirstPlayerGoAgain = data.didFirstPlayerGoAgain || false
   }
 
-  reset() {
+  resetAllData() {
     this.loadFromData({})
+  }
+
+  resetGameData() {
+    this.phase = 'setup'
+    this.board = []
+    this.isStealing = false
+    this.didFirstPlayerGoAgain = false
   }
 
   /***** Persistence *****/
