@@ -73,10 +73,11 @@
                                         id="settings.maxSteals"
                                         class="form-control"
                                         type="number"
-                                        x-model.debounce="$app.setup.settings.maxSteals"
+                                        x-model.number.debounce="$app.setup.settings.maxSteals"
                                     >
                                 </div>
                             </div>
+                            <!-- TODO: hide timer -->
                             <div class="row mb-3">
                                 <label
                                     for="settings.defaultTimerDurationSecs"
@@ -89,7 +90,7 @@
                                         id="settings.defaultTimerDurationSecs"
                                         class="form-control"
                                         type="number"
-                                        x-model.debounce="$app.setup.settings.defaultTimerDurationSecs"
+                                        x-model.number.debounce="$app.setup.settings.defaultTimerDurationSecs"
                                     >
                                 </div>
                             </div>
@@ -159,7 +160,6 @@
             </template>
             <template x-if="$app.phase === 'game'">
                 <div class="container-fluid">
-                    <!-- TODO: add timer -->
                     <h2 class="text-center" x-show="$app.game.isDone">Game finished!</h2>
                     <template x-if="$app.game.currentPlayer">
                         <h2 class="text-center">
@@ -289,6 +289,49 @@
                         >
                             Reset game
                         </button>
+                    </div>
+                    <!-- TODO: make draggable -->
+                    <div
+                        class="
+                            fs-3
+                            px-4 py-3 border border-3 border-primary rounded-3
+                            text-center
+                        "
+                        :class="{ 'bg-danger': $app.game.timer.isDone }"
+                        style="position: absolute; right: 1rem; bottom: 1rem;"
+                    >
+                        <p class="mb-0">
+                            <span x-show="$app.game.timer.isDone">Time's up!</span>
+                            <span x-show="!$app.game.timer.isDone" x-text="$app.game.timer.display"></span>
+                        </p>
+                        <div>
+                            <button
+                                class="btn btn-sm btn-outline-primary"
+                                x-show="!$app.game.timer.isRunning"
+                                @click="$app.game.startTimer()"
+                            >
+                                Play
+                            </button>
+                            <button
+                                class="btn btn-sm btn-outline-primary"
+                                x-show="$app.game.timer.isRunning"
+                                @click="$app.game.pauseTimer()"
+                            >
+                                Pause
+                            </button>
+                            <button
+                                class="btn btn-sm btn-outline-primary"
+                                @click="$app.game.resetTimer()"
+                            >
+                                Reset
+                            </button>
+                            <button
+                                class="btn btn-sm btn-outline-primary"
+                                @click="$app.game.addTimerSecs(5)"
+                            >
+                                +5s
+                            </button>
+                        </div>
                     </div>
                 </div>
             </template>

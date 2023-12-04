@@ -13,11 +13,17 @@ class PresenterApp {
   }
 
   resetAll() {
+    this.resetGame()
     this.state.resetAllData()
   }
 
   resetGame() {
     this.state.resetGameData()
+
+    // if reset while clearing data, make sure timer's cleaned up
+    if (this.state.phase === 'game') {
+      this.game.pauseTimer()
+    }
   }
 
   /***** Phase-specific controllers *****/
@@ -27,18 +33,18 @@ class PresenterApp {
   }
 
   get setup() {
-    return new PresenterSetupController(this.state.setup, this.state)
+    return new PresenterSetupController(this.state.setup, this)
   }
 
   get game() {
-    return new PresenterGameController(this.state.game)
+    return new PresenterGameController(this.state.game, this)
   }
 }
 
 class PresenterSetupController {
-  constructor(state, appState) {
+  constructor(state, app) {
     this.state = state
-    this.appState = appState
+    this.app = app
   }
 
   get settings() {
@@ -62,18 +68,32 @@ class PresenterSetupController {
       throw new Error('Cannot start game with 0 players')
     }
 
-    this.appState.phase = 'game'
-    this.appState.game.init()
+    this.app.state.phase = 'game'
+    this.app.game.init()
   }
 }
 
 class PresenterGameController {
-  constructor(state) {
+  constructor(state, app) {
     this.state = state
+    this.app = app
+
+    if (!this.app.timerState) {
+      this.resetTimer()
+    }
+  }
+
+  init() {
+    this.state.init()
+    this.resetTimer()
   }
 
   get board() {
     return this.state.board
+  }
+
+  get timer() {
+    return this.app.timerState
   }
 
   get isStealing() {
@@ -108,6 +128,8 @@ class PresenterGameController {
     this.state.setGiftForCurrentPlayer(gift)
   }
 
+  /***** Stealing *****/
+
   startSteal() {
     this.state.startSteal()
   }
@@ -126,6 +148,68 @@ class PresenterGameController {
 
   passFinalSwap() {
     this.state.endFinalSwap()
+  }
+
+  /***** Timer *****/
+
+  startTimer() {
+    const timer = this.app.timerState
+    if (timer.isRunning || timer.secondsLeft <= 0) return
+
+    const startTime = new Date()
+    timer.endTime = new Date(startTime.getTime() + timer.secondsLeft * 1000)
+    timer.interval = setInterval(() => {
+      const now = new Date()
+      const secondsLeft = Math.floor((timer.endTime - now) / 1000)
+      if (secondsLeft <= 0) {
+        this.pauseTimer()
+      }
+      timer.secondsLeft = Math.max(secondsLeft, 0)
+    }, 300)
+    timer.isRunning = true
+  }
+
+  pauseTimer() {
+    const timer = this.app.timerState
+    if (!timer.isRunning) return
+
+    clearInterval(timer.interval)
+    timer.endTime = null
+    timer.interval = null
+    timer.isRunning = false
+  }
+
+  resetTimer() {
+    // if reset while running, make sure everything's cleaned up
+    if (this.app.timerState) {
+      this.pauseTimer()
+    }
+
+    this.app.timerState = {
+      secondsLeft: this.state.settings.defaultTimerDurationSecs,
+      isRunning: false,
+
+      get display() {
+        const minutes = Math.floor(this.secondsLeft / 60)
+        const seconds = this.secondsLeft % 60
+
+        const minutesStr = minutes.toString().padStart(2, '0')
+        const secondsStr = seconds.toString().padStart(2, '0')
+        return `${minutesStr}:${secondsStr}`
+      },
+
+      get isDone() {
+        return this.secondsLeft === 0
+      },
+    }
+  }
+
+  addTimerSecs(seconds) {
+    const timer = this.app.timerState
+    timer.secondsLeft += seconds
+    if (timer.endTime) {
+      timer.endTime = new Date(timer.endTime.getTime() + seconds * 1000)
+    }
   }
 }
 
