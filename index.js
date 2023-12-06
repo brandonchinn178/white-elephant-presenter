@@ -155,6 +155,47 @@ class PresenterGameController {
 
   /***** Timer *****/
 
+  initTimer(el) {
+    const dragState = {
+      // (offsetLeft, offsetTop) is the coordinate of the cursor
+      // relative to the top-left corner of the timer at the
+      // start of the drag
+      offsetTop: null,
+      offsetLeft: null,
+
+      startDrag(event) {
+        event = event || window.event
+        event.preventDefault()
+
+        dragState.offsetTop = event.clientY - el.offsetTop
+        dragState.offsetLeft = event.clientX - el.offsetLeft
+
+        document.onmouseup = dragState.stopDrag
+        document.onmousemove = dragState.doDrag
+      },
+
+      doDrag(event) {
+        event = event || window.event
+        event.preventDefault()
+
+        // clear the initial right/bottom styling
+        el.style.right = ""
+        el.style.bottom = ""
+
+        // set the new position
+        el.style.top = (event.clientY - dragState.offsetTop) + 'px'
+        el.style.left = (event.clientX - dragState.offsetLeft) + 'px'
+      },
+
+      stopDrag() {
+        document.onmouseup = null
+        document.onmousemove = null
+      },
+    }
+
+    el.onmousedown = dragState.startDrag
+  }
+
   startTimer() {
     const timer = this.app.timerState
     if (timer.isRunning || timer.secondsLeft <= 0) return

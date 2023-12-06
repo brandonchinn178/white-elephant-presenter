@@ -309,16 +309,24 @@
                             Reset game
                         </button>
                     </div>
-                    <!-- TODO: make draggable -->
                     <div
                         class="
                             fs-3
                             px-4 py-3 border border-3 border-primary rounded-3
                             text-center
                         "
-                        :class="{ 'bg-danger': $app.game.timer.isDone }"
-                        style="position: absolute; right: 1rem; bottom: 1rem;"
+                        :class="{
+                            'bg-danger': $app.game.timer.isDone,
+                            'bg-white': !$app.game.timer.isDone,
+                        }"
+                        style="
+                            cursor: move;
+                            position: absolute;
+                            right: 1rem;
+                            bottom: 1rem;
+                        "
                         x-show="$app.game.timer.enabled"
+                        x-init="$app.game.initTimer($el)"
                     >
                         <p class="mb-0">
                             <span x-show="$app.game.timer.isDone">Time's up!</span>
