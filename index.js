@@ -93,7 +93,10 @@ class PresenterGameController {
   }
 
   get timer() {
-    return this.app.timerState
+    return {
+      ...this.app.timerState,
+      enabled: this.state.settings.timerEnabled,
+    }
   }
 
   get isStealing() {
@@ -225,6 +228,7 @@ class PresenterState {
     this.settings = data.settings || {
       maxSteals: 3,
       allowStealBacks: false,
+      timerEnabled: false,
       defaultTimerDurationSecs: 30,
     }
     this.players = data.players || []

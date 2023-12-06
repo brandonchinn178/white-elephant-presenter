@@ -77,7 +77,6 @@
                                     >
                                 </div>
                             </div>
-                            <!-- TODO: hide timer -->
                             <div class="row mb-3">
                                 <label
                                     for="settings.defaultTimerDurationSecs"
@@ -91,7 +90,27 @@
                                         class="form-control"
                                         type="number"
                                         x-model.number.debounce="$app.setup.settings.defaultTimerDurationSecs"
+                                        :disabled="!$app.setup.settings.timerEnabled"
                                     >
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <div class="form-check form-check-reverse form-switch">
+                                        <label
+                                            for="settings.timerEnabled"
+                                            class="form-check-label"
+                                        >
+                                            Enable timer
+                                        </label>
+                                        <input
+                                            id="settings.timerEnabled"
+                                            class="form-check-input"
+                                            role="switch"
+                                            type="checkbox"
+                                            x-model.debounce="$app.setup.settings.timerEnabled"
+                                        >
+                                    </div>
                                 </div>
                             </div>
                             <div class="row mb-3">
@@ -299,6 +318,7 @@
                         "
                         :class="{ 'bg-danger': $app.game.timer.isDone }"
                         style="position: absolute; right: 1rem; bottom: 1rem;"
+                        x-show="$app.game.timer.enabled"
                     >
                         <p class="mb-0">
                             <span x-show="$app.game.timer.isDone">Time's up!</span>
