@@ -268,7 +268,6 @@ class PresenterState {
     this.phase = data.phase || 'setup'
     this.settings = data.settings || {
       maxSteals: 3,
-      allowStealBacks: false,
       timerEnabled: false,
       defaultTimerDurationSecs: 30,
     }
@@ -462,13 +461,6 @@ class PresenterGameState {
   canStealFrom(targetPlayer) {
     if (targetPlayer.gift.stealsLeft <= 0) {
       return false
-    }
-
-    if (!this.settings.allowStealBacks) {
-      const currentPlayer = this.getCurrentPlayer()
-      if (targetPlayer.gift.lastOwner === currentPlayer.name) {
-        return false
-      }
     }
 
     return true
