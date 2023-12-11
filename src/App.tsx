@@ -1,117 +1,116 @@
-import { useEffect, useState } from 'react'
+import { useMachine, useSelector } from '@xstate/react'
 
 import { Header } from './Header'
 import { PageGame } from './PageGame'
 import { PageSetup } from './PageSetup'
 import { getPresenterState, setPresenterState } from './persist'
-import {
-  canOpenGift,
-  canPassTurn,
-  canStartGame,
-  canStealGift,
-  doOpenGift,
-  doPassTurn,
-  doStealGift,
-  getEmptyState,
-  playerAdd,
-  playerRemove,
-  resetAll,
-  resetGame,
-  startGame,
-  updateConfig,
-  PresenterState,
-  PresenterStateGame,
-  PresenterStateSetup,
-} from './state'
+import { presenterMachine } from './state'
 
-type UpdateState<State> = <Args>(
-  f: (state: State, ...args: Args) => State,
-  ...args: Args
-) => void
-
-type StateProps<State> = {
-  state: State
-  updateState: UpdateState<State>
-}
-
-const INITIAL_STATE = getPresenterState() ?? getEmptyState()
+const INITIAL_STATE = getPresenterState()
 
 export default function App() {
-  const [state, setState] = useState(INITIAL_STATE)
-  const updateState = <Args,>(
-    f: (state: PresenterState, ...args: Args) => PresenterState,
-    ...args: Args
-  ) => setState((state) => f(state, ...args))
-
-  useEffect(() => {
-    setPresenterState(state)
-  }, [state])
+  const [state, send] = useMachine(presenterMachine, {
+    systemId: 'root',
+    snapshot: INITIAL_STATE,
+    inspect: (event) => {
+      persistState(event)
+    },
+  })
 
   return (
     <>
-      <Header resetData={() => updateState(resetAll)} />
+      <Header resetData={() => send({ type: 'RESET_ALL' })} />
       <div className="flex-fill my-4">
-        <PresenterApp state={state} updateState={updateState} />
+        <PresenterApp state={state} send={send} />
       </div>
     </>
   )
 }
 
-function PresenterApp({ state, updateState }: StateProps<PresenterState>) {
-  switch (state.phase) {
-    case 'setup':
-      return <PresenterAppSetup state={state} updateState={updateState} />
-    case 'game':
-      return <PresenterAppGame state={state} updateState={updateState} />
+function PresenterApp({ state, send }) {
+  switch (true) {
+    case state.matches('setup'):
+      return <PresenterAppSetup actorRef={state.children.setup!} />
+    case state.matches('game'):
+      return (
+        <PresenterAppGame
+          actorRef={state.children.game!}
+          resetGame={() => send({ type: 'RESET_GAME' })}
+        />
+      )
   }
 }
 
-function PresenterAppSetup({
-  state,
-  updateState,
-}: StateProps<PresenterStateSetup>) {
+const persistState = (event) => {
+  if (event.type !== '@xstate.snapshot') {
+    return
+  }
+
+  if (event.event.type.startsWith('xstate.')) {
+    return
+  }
+
+  const root = event.actorRef.system.get('root')
+  setPresenterState(root.getPersistedSnapshot())
+}
+
+function PresenterAppSetup({ actorRef }) {
+  const { configuration, players } = useSelector(actorRef, s => s.context)
+  const canStart = useSelector(actorRef, s => s.can({ type: 'END' }))
+
   return (
     <PageSetup
-      configuration={state.configuration}
-      players={state.players}
-      canStart={canStartGame(state)}
-      updateConfig={(key, value) => updateState(updateConfig, key, value)}
-      addPlayer={(name) => updateState(playerAdd, name)}
-      removePlayer={(name) => updateState(playerRemove, name)}
-      startGame={() => updateState(startGame)}
+      configuration={configuration}
+      players={players}
+      canStart={canStart}
+      updateConfig={(key, value) => actorRef.send({ type: 'UPDATE_CONFIG', key, value })}
+      addPlayer={(name: string) => actorRef.send({ type: 'ADD_PLAYER', name })}
+      removePlayer={(name: string) => actorRef.send({ type: 'REMOVE_PLAYER', name })}
+      startGame={() => actorRef.send({ type: 'END' })}
     />
   )
 }
 
-function PresenterAppGame({
-  state,
-  updateState,
-}: StateProps<PresenterStateGame>) {
-  const board = state.playerOrder.map((player, i) => ({
+function PresenterAppGame({ actorRef, resetGame }) {
+  const snapshot = useSelector(actorRef, s => s)
+  const {
+    playerOrder,
+    gifts,
+    currentPlayerIndex,
+    nextPlayerIndex,
+  } = useSelector(actorRef, s => s.context)
+
+  const board = playerOrder.map((player, i) => ({
     index: i,
     name: player,
-    gift: state.gifts[i] ?? null,
+    gift: gifts[i] ?? null,
   }))
 
-  const openGift = canOpenGift(state)
-    ? (gift: string) => updateState(doOpenGift, gift)
-    : null
-  const getStealGiftFunc = (targetIndex: number) =>
-    canStealGift(state, targetIndex)
-      ? () => updateState(doStealGift, targetIndex)
+  const openGift =
+    snapshot.can({ type: 'OPEN_GIFT', gift: 'some_gift' })
+      ? (gift) => actorRef.send({ type: 'OPEN_GIFT', gift })
       : null
-  const passTurn = canPassTurn(state) ? () => updateState(doPassTurn) : null
+  const getStealGiftFunc = (targetIndex) =>
+    snapshot.can({ type: 'STEAL', targetIndex })
+      ? () => {
+        actorRef.send({ type: 'STEAL', targetIndex })
+      }
+      : null
+  const passTurn =
+    snapshot.can({ type: 'PASS' })
+      ? () => actorRef.send({ type: 'PASS' })
+      : null
 
   return (
     <PageGame
       board={board}
-      currentPlayerIndex={state.currentPlayerIndex}
-      nextPlayerIndex={state.nextPlayerIndex}
-      isDone={state.roundType === 'done'}
+      currentPlayerIndex={currentPlayerIndex}
+      nextPlayerIndex={nextPlayerIndex}
+      isDone={snapshot.matches('done')}
       openGift={openGift}
       getStealGiftFunc={getStealGiftFunc}
       passTurn={passTurn}
-      resetGame={() => updateState(resetGame)}
+      resetGame={resetGame}
     />
   )
 }

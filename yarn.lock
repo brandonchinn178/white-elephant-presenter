@@ -933,6 +933,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@xstate/react@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "@xstate/react@npm:4.0.1"
+  dependencies:
+    use-isomorphic-layout-effect: "npm:^1.1.2"
+    use-sync-external-store: "npm:^1.0.0"
+  peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0
+    xstate: ^5.1.0
+  peerDependenciesMeta:
+    xstate:
+      optional: true
+  checksum: e82cb5d98cc38b7d089d9a64f7ef0e17822d8239490b7125015ea59d99cf758f07a5340bfdf7c582bb0a7fc23cda0d16b4c2300f563b81985c18164328e0d69b
+  languageName: node
+  linkType: hard
+
 "abbrev@npm:^2.0.0":
   version: 2.0.0
   resolution: "abbrev@npm:2.0.0"
@@ -3853,6 +3869,27 @@ __metadata:
   languageName: node
   linkType: hard
 
+"use-isomorphic-layout-effect@npm:^1.1.2":
+  version: 1.1.2
+  resolution: "use-isomorphic-layout-effect@npm:1.1.2"
+  peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+  checksum: d8deea8b85e55ac6daba237a889630bfdbf0ebf60e9e22b6a78a78c26fabe6025e04ada7abef1e444e6786227d921e648b2707db8b3564daf757264a148a6e23
+  languageName: node
+  linkType: hard
+
+"use-sync-external-store@npm:^1.0.0":
+  version: 1.2.0
+  resolution: "use-sync-external-store@npm:1.2.0"
+  peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0
+  checksum: ac4814e5592524f242921157e791b022efe36e451fe0d4fd4d204322d5433a4fc300d63b0ade5185f8e0735ded044c70bcf6d2352db0f74d097a238cebd2da02
+  languageName: node
+  linkType: hard
+
 "vite@npm:^5.0.0":
   version: 5.0.7
   resolution: "vite@npm:5.0.7"
@@ -3982,6 +4019,7 @@ __metadata:
     "@typescript-eslint/eslint-plugin": "npm:^6.10.0"
     "@typescript-eslint/parser": "npm:^6.10.0"
     "@vitejs/plugin-react": "npm:^4.2.0"
+    "@xstate/react": "npm:^4.0.1"
     array-shuffle: "npm:^3.0.0"
     eslint: "npm:^8.53.0"
     eslint-config-prettier: "npm:^9.1.0"
@@ -3994,6 +4032,7 @@ __metadata:
     react-hook-form: "npm:^7.49.2"
     typescript: "npm:^5.2.2"
     vite: "npm:^5.0.0"
+    xstate: "npm:^5.2.1"
   languageName: unknown
   linkType: soft
 
@@ -4023,6 +4062,13 @@ __metadata:
   version: 1.0.2
   resolution: "wrappy@npm:1.0.2"
   checksum: 56fece1a4018c6a6c8e28fbc88c87e0fbf4ea8fd64fc6c63b18f4acc4bd13e0ad2515189786dd2c30d3eec9663d70f4ecf699330002f8ccb547e4a18231fc9f0
+  languageName: node
+  linkType: hard
+
+"xstate@npm:^5.2.1":
+  version: 5.2.1
+  resolution: "xstate@npm:5.2.1"
+  checksum: 769958d84d1295a9fbd0aa10a8737dc172300ca6dd751f9378b88089a1db8e85f0c089b6aecf924dd279cdfc486c5be85ce15b863152361851d8d43c16371e6c
   languageName: node
   linkType: hard
 
