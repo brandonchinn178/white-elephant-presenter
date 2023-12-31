@@ -5,4 +5,5 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   cacheDir: '.yarn/cache/vite/',
+  base: '/white-elephant-presenter/',
 })

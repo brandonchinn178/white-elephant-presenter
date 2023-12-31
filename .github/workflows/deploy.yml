@@ -1,0 +1,52 @@
+name: Deploy
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      -
+        uses: actions/checkout@v4
+      # WORKAROUND: https://github.com/actions/setup-node/issues/904
+      -
+        uses: actions/setup-node@v3
+        with:
+          node-version: latest
+      -
+        run: corepack enable
+      # END WORKAROUND
+      -
+        uses: actions/setup-node@v3
+        with:
+          node-version: latest
+          cache: yarn
+      -
+        run: yarn install --immutable
+      -
+        run: yarn build
+      -
+        uses: actions/configure-pages@v3
+      -
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: ./dist
+      -
+        id: deployment
+        uses: actions/deploy-pages@v2
