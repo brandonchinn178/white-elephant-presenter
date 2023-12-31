@@ -1,0 +1,57 @@
+name: Lint
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  eslint:
+    runs-on: ubuntu-latest
+
+    steps:
+      -
+        uses: actions/checkout@v4
+      # WORKAROUND: https://github.com/actions/setup-node/issues/904
+      -
+        uses: actions/setup-node@v3
+        with:
+          node-version: latest
+      -
+        run: corepack enable
+      # END WORKAROUND
+      -
+        uses: actions/setup-node@v4
+        with:
+          node-version: latest
+          cache: yarn
+      -
+        run: yarn install --immutable
+      -
+        run: yarn lint
+
+  prettier:
+    runs-on: ubuntu-latest
+
+    steps:
+      -
+        uses: actions/checkout@v4
+      # WORKAROUND: https://github.com/actions/setup-node/issues/904
+      -
+        uses: actions/setup-node@v3
+        with:
+          node-version: latest
+      -
+        run: corepack enable
+      # END WORKAROUND
+      -
+        uses: actions/setup-node@v4
+        with:
+          node-version: latest
+          cache: yarn
+      -
+        run: yarn install --immutable
+      -
+        run: |
+          yarn prettier --write .
+          git diff --exit-code
