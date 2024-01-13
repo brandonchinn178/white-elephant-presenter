@@ -1,4 +1,4 @@
-import { PresenterState } from './state'
+import { type PresenterState } from './state'
 
 export const getPresenterState = (): PresenterState | null => {
   const state = window.localStorage.getItem('presenter-state')
