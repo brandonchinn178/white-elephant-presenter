@@ -9,6 +9,12 @@ export type TimerProps = {
 export function Timer({ defaultDurationSecs }: TimerProps) {
   const [timer, setTimer] = useState(() => initTimerState(defaultDurationSecs))
 
+  // reset timer if config changes
+  useEffect(() => {
+    setTimer(initTimerState(defaultDurationSecs))
+  }, [defaultDurationSecs])
+
+  // run timer
   useEffect(() => {
     const interval = setInterval(() => setTimer(tickTimer), 300)
     return () => clearInterval(interval)

@@ -1058,13 +1058,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"array-shuffle@npm:^3.0.0":
-  version: 3.0.0
-  resolution: "array-shuffle@npm:3.0.0"
-  checksum: 1219bf6377f2cd0168960af15e5f373eb423c44e22830c5b06075095c4fd05c17bf0157ac0c22051884665da46f8f6f228b3ae8da84433f2ee4e7be8f9a505b0
-  languageName: node
-  linkType: hard
-
 "array-union@npm:^2.1.0":
   version: 2.1.0
   resolution: "array-union@npm:2.1.0"
@@ -3982,7 +3975,6 @@ __metadata:
     "@typescript-eslint/eslint-plugin": "npm:^6.10.0"
     "@typescript-eslint/parser": "npm:^6.10.0"
     "@vitejs/plugin-react": "npm:^4.2.0"
-    array-shuffle: "npm:^3.0.0"
     eslint: "npm:^8.53.0"
     eslint-config-prettier: "npm:^9.1.0"
     eslint-plugin-react: "npm:^7.33.2"

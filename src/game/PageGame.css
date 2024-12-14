@@ -8,7 +8,7 @@
 }
 
 #game-board .card[data-is-current-player='true'] {
-  background: var(--bs-success-bg-subtle);
+  background: #f7edb7;
 }
 
 #game-board .card[data-is-current-player='true'],
@@ -17,5 +17,5 @@
 }
 
 #game-board .card[data-is-next-player='true'] {
-  background: var(--bs-warning-bg-subtle);
+  background: #e1cdf4;
 }
