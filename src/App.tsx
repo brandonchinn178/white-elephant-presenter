@@ -2,49 +2,28 @@ import { useEffect, useState } from 'react'
 
 import { Header } from './Header'
 import { PageGame } from './game/PageGame'
-import { PageSetup } from './PageSetup'
 import { getPresenterState, setPresenterState } from './persist'
 import {
-  canOpenGift,
-  canPassTurn,
-  canStartGame,
-  canStealGift,
-  doOpenGift,
-  doPassTurn,
-  doStealGift,
+  PresenterState,
+  PresenterStateConfig,
+  configSet,
   getEmptyState,
+  getRoundInfo,
+  giftOpen,
+  giftSteal,
+  passTurn,
+  Player,
   playerAdd,
   playerRemove,
+  playersReshuffle,
   resetAll,
-  resetGame,
-  startGame,
-  updateConfig,
-  PresenterState,
-  PresenterStateGame,
-  PresenterStateSetup,
+  resetGifts,
 } from './state'
 
-type UpdateState<StateIn extends PresenterState> = <
-  Args extends unknown[],
-  StateOut extends PresenterState,
->(
-  f: (state: StateIn, ...args: Args) => StateOut,
-  ...args: Args
-) => void
-
-type StateProps<State extends PresenterState> = {
-  state: State
-  updateState: UpdateState<State>
-}
-
-const INITIAL_STATE = getPresenterState() ?? getEmptyState()
-
 export default function App() {
-  const [state, setState] = useState<PresenterState>(INITIAL_STATE)
-  const updateState = <Args extends unknown[]>(
-    f: (state: PresenterState, ...args: Args) => PresenterState,
-    ...args: Args
-  ) => setState((state) => f(state, ...args))
+  const [state, setState] = useState(
+    () => getPresenterState() ?? getEmptyState()
+  )
 
   useEffect(() => {
     setPresenterState(state)
@@ -52,82 +31,47 @@ export default function App() {
 
   return (
     <>
-      <Header resetData={() => updateState(resetAll)} />
+      <Header resetData={() => setState(resetAll)} />
       <div className="flex-fill my-4">
-        <PresenterApp state={state} updateState={updateState} />
+        <PresenterAppGame state={state} updateState={setState} />
       </div>
     </>
-  )
-}
-
-function PresenterApp({ state, updateState }: StateProps<PresenterState>) {
-  switch (state.phase) {
-    case 'setup':
-      return (
-        <PresenterAppSetup
-          state={state}
-          updateState={updateState as UpdateState<PresenterStateSetup>}
-        />
-      )
-    case 'game':
-      return (
-        <PresenterAppGame
-          state={state}
-          updateState={updateState as UpdateState<PresenterStateGame>}
-        />
-      )
-  }
-}
-
-function PresenterAppSetup({
-  state,
-  updateState,
-}: StateProps<PresenterStateSetup>) {
-  return (
-    <PageSetup
-      configuration={state.configuration}
-      players={state.players}
-      canStart={canStartGame(state)}
-      updateConfig={(key, value) => updateState(updateConfig, key, value)}
-      addPlayer={(name) => updateState(playerAdd, name)}
-      removePlayer={(name) => updateState(playerRemove, name)}
-      startGame={() => updateState(startGame)}
-    />
   )
 }
 
 function PresenterAppGame({
   state,
   updateState,
-}: StateProps<PresenterStateGame>) {
-  const settings = state.setupConfig.configuration
-  const board = state.playerOrder.map((player, i) => ({
-    index: i,
+}: {
+  state: PresenterState
+  updateState: (f: (state: PresenterState) => PresenterState) => void
+}) {
+  const roundInfo = getRoundInfo(state)
+  const { currPlayer } = roundInfo
+  const board = state.players.map((player) => ({
     name: player,
-    gift: state.gifts[i] ?? null,
+    gift: state.gifts[player] ?? null,
   }))
-
-  const openGift = canOpenGift(state)
-    ? (gift: string) => updateState(doOpenGift, gift)
-    : null
-  const getStealGiftFunc = (targetIndex: number) =>
-    canStealGift(state, targetIndex)
-      ? () => updateState(doStealGift, targetIndex)
-      : null
-  const passTurn = canPassTurn(state) ? () => updateState(doPassTurn) : null
 
   return (
     <PageGame
       board={board}
-      currentPlayerIndex={state.currentPlayerIndex}
-      nextPlayerIndex={state.nextPlayerIndex}
-      isDone={state.roundType === 'done'}
-      timerEnabled={settings.timerEnabled}
-      defaultTimerDurationSecs={settings.defaultTimerDurationSecs}
-      openGift={openGift}
-      getStealGiftFunc={getStealGiftFunc}
-      passTurn={passTurn}
-      resetGame={() => updateState(resetGame)}
+      roundInfo={roundInfo}
+      config={state.config}
+      saveConfig={(config: PresenterStateConfig) =>
+        updateState(configSet(config))
+      }
+      addPlayer={(player: string) => updateState(playerAdd(player))}
+      removePlayer={(player: string) => updateState(playerRemove(player))}
+      reshufflePlayers={() => updateState(playersReshuffle)}
+      openGift={(gift: string) =>
+        currPlayer !== null && updateState(giftOpen(gift, currPlayer))
+      }
+      stealGift={(targetPlayer: Player) =>
+        currPlayer !== null && updateState(giftSteal(currPlayer, targetPlayer))
+      }
+      passTurn={() => updateState(passTurn)}
+      resetGifts={() => updateState(resetGifts)}
     />
   )
 }

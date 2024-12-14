@@ -1,6 +1,4 @@
-import arrayShuffle from 'array-shuffle'
-
-export type PresenterState = PresenterStateSetup | PresenterStateGame
+/***** CONFIG *****/
 
 export type PresenterStateConfig = {
   maxSteals: number
@@ -8,271 +6,241 @@ export type PresenterStateConfig = {
   timerEnabled: boolean
 }
 
-export type PresenterStateSetup = {
-  phase: 'setup'
-  configuration: PresenterStateConfig
-  players: string[]
+/***** PLAYER *****/
+
+export type Player = string
+
+/**
+ * Add a player into the game, at a random location.
+ *
+ * Modifies player list in place
+ */
+const insertPlayer = (players: Player[], name: string): void => {
+  const newIndex = Math.floor(Math.random() * (players.length + 1))
+  players.splice(newIndex, 0, name)
 }
 
-export type PresenterStateGame = {
-  phase: 'game'
-  setupConfig: Omit<PresenterStateSetup, 'phase'>
-  playerOrder: string[]
-  gifts: Record<number, Gift | undefined>
-} & (RoundNormal | RoundFinalSwap | RoundDone)
+const addPlayer = (players: Player[], name: string): Player[] => {
+  if (!(name.length > 0 && !players.includes(name))) {
+    return players
+  }
 
-export type RoundNormal = {
-  roundType: 'normal'
-  currentPlayerIndex: number
-  nextPlayerIndex: number
+  const newPlayers = [...players]
+  insertPlayer(newPlayers, name)
+  return newPlayers
 }
 
-export type RoundFinalSwap = {
-  roundType: 'finalSwap'
-  currentPlayerIndex: number
-  nextPlayerIndex: null
+const removePlayer = (players: Player[], name: string): Player[] => {
+  return players.filter((n) => n !== name)
 }
 
-export type RoundDone = {
-  roundType: 'done'
-  currentPlayerIndex: null
-  nextPlayerIndex: null
+const reshufflePlayers = (players: Player[]): Player[] => {
+  const newPlayers: Player[] = []
+  players.forEach((player) => insertPlayer(newPlayers, player))
+  return newPlayers
 }
+
+/***** GIFT *****/
 
 export type Gift = {
   label: string
-  stealsLeft: number
+
+  // number of times this gift has been stolen so far
+  currSteals: number
 }
 
-/***** GENERAL *****/
+export type Gifts = Record<string, Gift | undefined>
 
-export const getEmptyState = (): PresenterState => ({
-  phase: 'setup',
-  configuration: {
-    maxSteals: 3,
-    defaultTimerDurationSecs: 30,
-    timerEnabled: false,
-  },
-  players: [],
-})
-
-export const resetAll = getEmptyState
-
-/***** SETUP *****/
-
-const canUpdateConfig = <T extends keyof PresenterStateConfig>(
-  key: T,
-  value: PresenterStateConfig[T]
-): boolean => {
-  switch (key) {
-    case 'maxSteals':
-      return (value as number) >= 0
-    case 'defaultTimerDurationSecs':
-      return (value as number) > 0
-    default:
-      return true
+const openGift = (gifts: Gifts, player: Player, gift: string): Gifts => {
+  return {
+    ...gifts,
+    [player]: { label: gift, currSteals: 0 },
   }
 }
 
-export const updateConfig = <T extends keyof PresenterStateConfig>(
-  state: PresenterStateSetup,
-  key: T,
-  value: PresenterStateConfig[T]
-): PresenterStateSetup => {
-  if (!canUpdateConfig(key, value)) {
-    return state
+const stealGift = (
+  gifts: Gifts,
+  currPlayer: Player,
+  targetPlayer: Player
+): Gifts => {
+  const oldGift = gifts[currPlayer]
+  const giftBeingStolen = gifts[targetPlayer]
+  if (!giftBeingStolen) {
+    throw new Error(`stealGift called on player without gift: ${targetPlayer}`)
   }
 
   return {
-    ...state,
-    configuration: {
-      ...state.configuration,
-      [key]: value,
+    ...gifts,
+    [currPlayer]: {
+      ...giftBeingStolen,
+      currSteals: giftBeingStolen.currSteals + 1,
     },
-  }
-}
-
-export const playerAdd = (state: PresenterStateSetup, name: string) => {
-  if (!(name.length > 0 && !state.players.includes(name))) {
-    return state
-  }
-
-  return {
-    ...state,
-    players: [...state.players, name],
-  }
-}
-
-export const playerRemove = (state: PresenterStateSetup, name: string) => ({
-  ...state,
-  players: state.players.filter((n) => n !== name),
-})
-
-export const canStartGame = (state: PresenterStateSetup) =>
-  state.players.length > 0
-
-export const startGame = (state: PresenterStateSetup): PresenterState => {
-  if (!canStartGame(state)) {
-    return state
-  }
-
-  return {
-    phase: 'game',
-    setupConfig: {
-      configuration: state.configuration,
-      players: state.players,
-    },
-    roundType: 'normal',
-    playerOrder: arrayShuffle(state.players),
-    gifts: {},
-    currentPlayerIndex: 0,
-    nextPlayerIndex: state.players.length > 1 ? 1 : 0,
+    // just in case the current player has a gift,
+    // e.g. when swapping gifts at the end
+    [targetPlayer]: oldGift,
   }
 }
 
 /***** GAME *****/
 
-export const resetGame = (state: PresenterStateGame): PresenterStateSetup => ({
-  phase: 'setup',
-  ...state.setupConfig,
-})
-
-const toNextRound = (state: PresenterStateGame): PresenterStateGame => {
-  const numPlayers = state.setupConfig.players.length
-
-  switch (state.roundType) {
-    case 'normal': {
-      if (state.nextPlayerIndex === numPlayers - 1) {
-        return {
-          ...state,
-          currentPlayerIndex: state.nextPlayerIndex,
-          nextPlayerIndex: 0,
-        }
-      }
-      if (state.nextPlayerIndex === 0) {
-        return {
-          ...state,
-          roundType: 'finalSwap',
-          currentPlayerIndex: state.nextPlayerIndex,
-          nextPlayerIndex: null,
-        }
-      }
-      return {
-        ...state,
-        currentPlayerIndex: state.nextPlayerIndex,
-        nextPlayerIndex: state.nextPlayerIndex + 1,
-      }
-    }
-    case 'finalSwap': {
-      return {
-        ...state,
-        roundType: 'done',
-        currentPlayerIndex: null,
-        nextPlayerIndex: null,
-      }
-    }
-    case 'done': {
-      return state
-    }
-  }
+export type PresenterState = {
+  config: PresenterStateConfig
+  players: Player[]
+  gifts: Gifts
+  didFinalSwap: boolean
 }
 
-export const canOpenGift = (state: PresenterStateGame) =>
-  state.roundType === 'normal'
-
-export const doOpenGift = (
-  state: PresenterStateGame,
-  gift: string
-): PresenterStateGame => {
-  if (!canOpenGift(state)) {
-    return state
-  }
-
-  let currentPlayerIndex
-  switch (state.roundType) {
-    case 'normal': {
-      currentPlayerIndex = state.currentPlayerIndex
-      break
-    }
-    default: {
-      throw new Error('unreachable: checked in canOpenGift')
-    }
-  }
-
-  const settings = state.setupConfig.configuration
-  return toNextRound({
-    ...state,
-    gifts: {
-      ...state.gifts,
-      [currentPlayerIndex]: {
-        label: gift,
-        stealsLeft: settings.maxSteals,
-      },
+export const getEmptyState = (): PresenterState => {
+  return {
+    config: {
+      maxSteals: 3,
+      defaultTimerDurationSecs: 30,
+      timerEnabled: false,
     },
-  })
+    players: [],
+    gifts: {},
+    didFinalSwap: false,
+  }
 }
 
-export const canStealGift = (
-  state: PresenterStateGame,
-  targetIndex: number
-) => {
-  if (state.roundType === 'done') {
-    return false
-  }
-
-  const gift = state.gifts[targetIndex]
-  return targetIndex !== state.currentPlayerIndex && gift && gift.stealsLeft > 0
+export const resetAll = (_: PresenterState): PresenterState => {
+  return getEmptyState()
 }
 
-export const doStealGift = (
-  state: PresenterStateGame,
-  targetIndex: number
-): PresenterStateGame => {
-  if (!canStealGift(state, targetIndex)) {
-    return state
+export const resetGifts = (state: PresenterState): PresenterState => {
+  return {
+    ...state,
+    gifts: {},
+    didFinalSwap: false,
+  }
+}
+
+/***** ROUND *****/
+
+export type RoundInfo = RoundInit | RoundNormal | RoundFinalSwap | RoundDone
+
+export type RoundInit = {
+  type: 'init'
+  currPlayer: null
+  nextPlayer: null
+}
+
+export type RoundNormal = {
+  type: 'normal'
+  currPlayer: Player
+  nextPlayer: Player
+}
+
+export type RoundFinalSwap = {
+  type: 'finalSwap'
+  currPlayer: Player
+  nextPlayer: null
+}
+
+export type RoundDone = {
+  type: 'done'
+  currPlayer: null
+  nextPlayer: null
+}
+
+export const getRoundInfo = (state: PresenterState): RoundInfo => {
+  if (state.players.length === 0) {
+    return {
+      type: 'init',
+      currPlayer: null,
+      nextPlayer: null,
+    }
   }
 
-  let currentPlayerIndex
-  switch (state.roundType) {
-    case 'normal': {
-      currentPlayerIndex = state.currentPlayerIndex
-      break
-    }
-    case 'finalSwap': {
-      currentPlayerIndex = state.currentPlayerIndex
-      break
-    }
-    case 'done': {
-      throw new Error('unreachable: checked in canStealGift')
+  const firstPlayer = state.players[0]
+  if (!firstPlayer) {
+    throw new Error('No players found')
+  }
+
+  const playersWithoutGifts = state.players.filter(
+    (player) => state.gifts[player] === undefined
+  )
+  const [currPlayer, nextPlayer, ..._] = playersWithoutGifts
+  if (currPlayer) {
+    return {
+      type: 'normal',
+      currPlayer: currPlayer,
+      nextPlayer: nextPlayer ?? /* final swap */ firstPlayer,
     }
   }
 
-  const oldGift = state.gifts[currentPlayerIndex]
-  const giftBeingStolen = state.gifts[targetIndex]
-  if (!giftBeingStolen) {
-    throw new Error('unreachable: checked in canStealGift')
+  if (!state.didFinalSwap) {
+    return {
+      type: 'finalSwap',
+      currPlayer: firstPlayer,
+      nextPlayer: null,
+    }
   }
 
   return {
-    ...state,
-    gifts: {
-      ...state.gifts,
-      [currentPlayerIndex]: {
-        ...giftBeingStolen,
-        stealsLeft: giftBeingStolen.stealsLeft - 1,
-      },
-      [targetIndex]: oldGift,
-    },
-    currentPlayerIndex: targetIndex,
+    type: 'done',
+    currPlayer: null,
+    nextPlayer: null,
   }
 }
 
-export const canPassTurn = (state: PresenterStateGame) =>
-  state.roundType === 'finalSwap'
+/***** GAME ACTIONS *****/
 
-export const doPassTurn = (state: PresenterStateGame): PresenterStateGame => {
-  if (!canPassTurn(state)) {
-    return state
+export const configSet =
+  (config: PresenterStateConfig) =>
+  (state: PresenterState): PresenterState => {
+    return {
+      ...state,
+      config,
+    }
   }
-  return toNextRound(state)
+
+export const playerAdd =
+  (player: string) =>
+  (state: PresenterState): PresenterState => {
+    return {
+      ...state,
+      players: addPlayer(state.players, player),
+    }
+  }
+
+export const playerRemove =
+  (player: string) =>
+  (state: PresenterState): PresenterState => {
+    return {
+      ...state,
+      players: removePlayer(state.players, player),
+    }
+  }
+
+export const playersReshuffle = (state: PresenterState): PresenterState => {
+  return {
+    ...state,
+    players: reshufflePlayers(state.players),
+  }
+}
+
+export const giftOpen =
+  (gift: string, currPlayer: Player) =>
+  (state: PresenterState): PresenterState => {
+    return {
+      ...state,
+      gifts: openGift(state.gifts, currPlayer, gift),
+    }
+  }
+
+export const giftSteal =
+  (currPlayer: Player, targetPlayer: Player) =>
+  (state: PresenterState): PresenterState => {
+    return {
+      ...state,
+      gifts: stealGift(state.gifts, currPlayer, targetPlayer),
+    }
+  }
+
+export const passTurn = (state: PresenterState): PresenterState => {
+  return {
+    ...state,
+    didFinalSwap: true,
+  }
 }

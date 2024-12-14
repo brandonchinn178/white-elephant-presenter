@@ -1,104 +1,133 @@
 import './PageGame.css'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
-import { getModal } from '../Modal'
-import { Timer, TimerProps } from './Timer'
+import { getModal, onModalLoad } from '../Modal'
+import { Gift, PresenterStateConfig, RoundInfo } from '../state'
+import { ModalAddPlayers, ModalAddPlayersProps } from './ModalAddPlayers'
+import {
+  ModalReshuffleOrder,
+  ModalReshuffleOrderProps,
+} from './ModalReshuffleOrder'
+import { ModalResetGifts, ModalResetGiftsProps } from './ModalResetGifts'
+import { ModalSettings, ModalSettingsProps } from './ModalSettings'
+import { Timer } from './Timer'
 
+type PlayerName = string
 type Player = {
-  index: number
-  name: string
+  name: PlayerName
   gift: Gift | null
 }
 
-type Gift = {
-  label: string
-  stealsLeft: number
-}
-
-type TransitionFunc<T extends unknown[] = []> = ((...args: T) => void) | null
-
 type PageGameProps = {
   board: Player[]
-  currentPlayerIndex: number | null
-  nextPlayerIndex: number | null
-  isDone: boolean
-  timerEnabled: boolean
-  defaultTimerDurationSecs: TimerProps['defaultDurationSecs']
-  openGift: PlayerCardProps['openGift']
-  getStealGiftFunc: (targetIndex: number) => PlayerCardProps['stealGift']
-  passTurn: PlayerCardProps['passTurn']
-  resetGame: ModalResetGameProps['resetGame']
-}
+  roundInfo: RoundInfo
+  config: PresenterStateConfig
+} & Pick<
+  PlayerCardProps,
+  'removePlayer' | 'openGift' | 'stealGift' | 'passTurn'
+> &
+  Pick<GameBannerProps, 'addPlayer' | 'saveConfig'> &
+  Pick<ModalReshuffleOrderProps, 'reshufflePlayers'> &
+  Pick<ModalResetGiftsProps, 'resetGifts'>
 
+// TODO: edit gifts
 export function PageGame({
   board,
-  currentPlayerIndex,
-  nextPlayerIndex,
-  isDone,
-  timerEnabled,
-  defaultTimerDurationSecs,
-  openGift,
-  getStealGiftFunc,
-  passTurn,
-  resetGame,
+  roundInfo,
+  config,
+  ...actions
 }: PageGameProps) {
-  const currentPlayer =
-    currentPlayerIndex === null ? null : board[currentPlayerIndex]
-  if (currentPlayer === undefined) {
-    throw new Error(`Player does not exist: ${currentPlayerIndex}`)
-  }
+  const { maxSteals, defaultTimerDurationSecs, timerEnabled } = config
+
+  const [isEditable, setEditable] = useState(false)
 
   return (
-    <div className="container-fluid">
-      {isDone && <h2 className="text-center">Game finished!</h2>}
-      {currentPlayer !== null && (
-        <h2 className="text-center">
-          Current player: <b>{currentPlayer.name}</b>
-        </h2>
-      )}
-      <div id="game-board" className="d-flex flex-wrap">
-        {board.map((player) => (
+    <div className="container-fluid d-flex flex-column gap-3">
+      <GameBanner roundInfo={roundInfo} config={config} {...actions} />
+      <div id="game-board" className="d-flex flex-wrap gap-3">
+        {board.map((player, i) => (
           <PlayerCard
             key={player.name}
             player={player}
-            currentPlayerIndex={currentPlayerIndex}
-            nextPlayerIndex={nextPlayerIndex}
-            openGift={openGift}
-            stealGift={getStealGiftFunc(player.index)}
-            passTurn={passTurn}
+            playerNum={i + 1}
+            roundInfo={roundInfo}
+            maxSteals={maxSteals}
+            isEditable={isEditable}
+            {...actions}
           />
         ))}
       </div>
-      <div className="mt-4 text-center">
-        <button
-          className="btn btn-outline-danger"
-          data-bs-toggle="modal"
-          data-bs-target="#modal-reset-game"
-        >
-          Reset game
-        </button>
-        <ModalResetGame resetGame={resetGame} />
+      <div className="d-flex gap-3 justify-content-center">
+        {!isEditable ? (
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => setEditable(true)}
+          >
+            Edit board
+          </button>
+        ) : (
+          <button
+            className="btn btn-success"
+            onClick={() => setEditable(false)}
+          >
+            Lock board
+          </button>
+        )}
+        <ModalResetGifts {...actions} />
+        <ModalReshuffleOrder {...actions} />
       </div>
       {timerEnabled && <Timer defaultDurationSecs={defaultTimerDurationSecs} />}
     </div>
   )
 }
 
-type PlayerCardProps = {
-  player: Player
-  currentPlayerIndex: number | null
-  nextPlayerIndex: number | null
-  openGift: ModalOpenGiftProps['openGift'] | null
-  stealGift: TransitionFunc
-  passTurn: TransitionFunc
+type GameBannerProps = {
+  roundInfo: RoundInfo
+} & ModalAddPlayersProps &
+  ModalSettingsProps
+
+function GameBanner({ roundInfo, ...modalProps }: GameBannerProps) {
+  if (roundInfo.type === 'done') {
+    return <h2 className="text-center">Game finished!</h2>
+  }
+
+  return (
+    <div className="d-flex justify-content-between">
+      {roundInfo.currPlayer && (
+        <h3>
+          Current player: <b>{roundInfo.currPlayer}</b>
+        </h3>
+      )}
+      <div className="d-flex gap-3">
+        <ModalAddPlayers {...modalProps} />
+        <ModalSettings {...modalProps} />
+      </div>
+    </div>
+  )
 }
 
+type PlayerCardProps = {
+  player: Player
+  playerNum: number
+  roundInfo: RoundInfo
+  maxSteals: number
+  isEditable: boolean
+  removePlayer: (player: string) => void
+  openGift: ModalOpenGiftProps['openGift']
+  stealGift: (targetPlayer: PlayerName) => void
+  passTurn: () => void
+}
+
+// TODO: remove players
 function PlayerCard({
   player,
-  currentPlayerIndex,
-  nextPlayerIndex,
+  playerNum,
+  roundInfo,
+  maxSteals,
+  isEditable,
+  removePlayer,
   openGift,
   stealGift,
   passTurn,
@@ -113,31 +142,37 @@ function PlayerCard({
     bootstrap.Tooltip.getOrCreateInstance(giftLabel)
   }, [player.gift, giftLabelRef])
 
+  const isCurrPlayer = player.name === roundInfo.currPlayer
+  const isNextPlayer = player.name === roundInfo.nextPlayer
+  const stealsLeft = maxSteals - (player.gift?.currSteals ?? 0)
+
   return (
     <div
       className="
         card
         flex-fill flex-row
-        m-2
         border-primary
         bg-gradient
         fs-5
       "
-      data-is-current-player={
-        player.index === currentPlayerIndex ? 'true' : undefined
-      }
-      data-is-next-player={
-        player.index === nextPlayerIndex ? 'true' : undefined
-      }
+      data-is-current-player={isCurrPlayer}
+      data-is-next-player={isNextPlayer}
     >
       <div
         className="
           p-2
           border-end border-primary border-2
           text-center
+          d-flex flex-column gap-1
         "
       >
-        <span>#{player.index + 1}</span>
+        <span>#{playerNum}</span>
+        {isEditable && (
+          <button
+            className="btn btn-close bg-danger"
+            onClick={() => removePlayer(player.name)}
+          />
+        )}
       </div>
       <div
         className="p-2"
@@ -149,12 +184,8 @@ function PlayerCard({
       >
         <p>
           <span className="fw-bold">{player.name}</span>
-          {player.index === currentPlayerIndex && (
-            <span>&mdash; It&apos;s your turn!</span>
-          )}
-          {player.index === nextPlayerIndex && (
-            <span>&mdash; You&apos;re up next!</span>
-          )}
+          {isCurrPlayer && <span>&mdash; It&apos;s your turn!</span>}
+          {isNextPlayer && <span>&mdash; You&apos;re up next!</span>}
         </p>
         {player.gift !== null && (
           <div>
@@ -168,24 +199,24 @@ function PlayerCard({
             >
               {player.gift.label}
             </p>
-            {stealGift && (
+            {stealsLeft > 0 && (
               <div>
                 <button
                   className="btn btn-sm btn-secondary"
-                  onClick={stealGift}
+                  onClick={() => stealGift(player.name)}
                 >
                   Steal
                 </button>
                 <i className="ms-2 fs-6">
-                  (Steals left: <span>{player.gift.stealsLeft}</span>)
+                  (Steals left: <span>{stealsLeft}</span>)
                 </i>
               </div>
             )}
           </div>
         )}
-        {player.index === currentPlayerIndex && (
-          <div>
-            {openGift && (
+        {isCurrPlayer && (
+          <>
+            {roundInfo.type === 'normal' && (
               <>
                 <button
                   className="btn btn-sm btn-primary"
@@ -197,12 +228,12 @@ function PlayerCard({
                 <ModalOpenGift openGift={openGift} />
               </>
             )}
-            {passTurn && (
+            {roundInfo.type === 'finalSwap' && (
               <button className="btn btn-sm btn-primary" onClick={passTurn}>
                 Pass
               </button>
             )}
-          </div>
+          </>
         )}
       </div>
     </div>
@@ -222,15 +253,8 @@ function ModalOpenGift({ openGift }: ModalOpenGiftProps) {
   const modalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const modal = modalRef.current
-    if (!modal) {
-      return
-    }
-
-    modal.addEventListener('hidden.bs.modal', () => {
+    onModalLoad(modalRef, () => {
       resetField('gift')
-    })
-    modal.addEventListener('shown.bs.modal', () => {
       setFocus('gift')
     })
   }, [modalRef, resetField, setFocus])
@@ -278,55 +302,6 @@ function ModalOpenGift({ openGift }: ModalOpenGiftProps) {
               </button>
             </div>
           </form>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-type ModalResetGameProps = {
-  resetGame: () => void
-}
-
-function ModalResetGame({ resetGame }: ModalResetGameProps) {
-  const modalRef = useRef(null)
-
-  return (
-    <div
-      ref={modalRef}
-      id="modal-reset-game"
-      className="modal"
-      tabIndex={-1}
-      aria-label="Reset game"
-      aria-hidden="true"
-    >
-      <div className="modal-dialog">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5>Are you sure?</h5>
-          </div>
-          <div className="modal-body">
-            This will clear all game progress and go back to the setup screen.
-          </div>
-          <div className="modal-footer">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="btn btn-danger"
-              onClick={() => {
-                resetGame()
-                getModal(modalRef).hide()
-              }}
-            >
-              Reset game
-            </button>
-          </div>
         </div>
       </div>
     </div>
