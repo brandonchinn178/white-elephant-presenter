@@ -26,13 +26,12 @@ type PageGameProps = {
   config: PresenterStateConfig
 } & Pick<
   PlayerCardProps,
-  'removePlayer' | 'openGift' | 'stealGift' | 'passTurn'
+  'removePlayer' | 'openGift' | 'updateGift' | 'stealGift' | 'passTurn'
 > &
   Pick<GameBannerProps, 'addPlayer' | 'saveConfig'> &
   Pick<ModalReshuffleOrderProps, 'reshufflePlayers'> &
   Pick<ModalResetGiftsProps, 'resetGifts'>
 
-// TODO: edit gifts
 export function PageGame({
   board,
   roundInfo,
@@ -61,12 +60,16 @@ export function PageGame({
       </div>
       <div className="d-flex gap-3 justify-content-center">
         {!isEditable ? (
-          <button
-            className="btn btn-outline-secondary"
-            onClick={() => setEditable(true)}
-          >
-            Edit board
-          </button>
+          <>
+            <button
+              className="btn btn-outline-secondary"
+              onClick={() => setEditable(true)}
+            >
+              Edit board
+            </button>
+            <ModalResetGifts {...actions} />
+            <ModalReshuffleOrder {...actions} />
+          </>
         ) : (
           <button
             className="btn btn-success"
@@ -75,8 +78,6 @@ export function PageGame({
             Lock board
           </button>
         )}
-        <ModalResetGifts {...actions} />
-        <ModalReshuffleOrder {...actions} />
       </div>
       {timerEnabled && <Timer defaultDurationSecs={defaultTimerDurationSecs} />}
     </div>
@@ -116,11 +117,11 @@ type PlayerCardProps = {
   isEditable: boolean
   removePlayer: (player: string) => void
   openGift: ModalOpenGiftProps['openGift']
+  updateGift: EditGiftFormProps['updateGift']
   stealGift: (targetPlayer: PlayerName) => void
   passTurn: () => void
 }
 
-// TODO: remove players
 function PlayerCard({
   player,
   playerNum,
@@ -129,11 +130,11 @@ function PlayerCard({
   isEditable,
   removePlayer,
   openGift,
+  updateGift,
   stealGift,
   passTurn,
 }: PlayerCardProps) {
   const giftLabelRef = useRef<HTMLDivElement>(null)
-
   useEffect(() => {
     const giftLabel = giftLabelRef.current
     if (!giftLabel) {
@@ -182,59 +183,109 @@ function PlayerCard({
           minWidth: 0,
         }}
       >
-        <p>
+        <p className="m-0">
           <span className="fw-bold">{player.name}</span>
           {isCurrPlayer && <span>&mdash; It&apos;s your turn!</span>}
           {isNextPlayer && <span>&mdash; You&apos;re up next!</span>}
         </p>
-        {player.gift !== null && (
-          <div>
-            <p
-              ref={giftLabelRef}
-              className="mw-100 text-truncate"
-              data-bs-toggle="tooltip"
-              data-bs-title={player.gift.label}
-              data-bs-placement="bottom"
-              data-bs-delay='{ "show": 500 }'
-            >
-              {player.gift.label}
-            </p>
-            {stealsLeft > 0 && (
-              <div>
-                <button
-                  className="btn btn-sm btn-secondary"
-                  onClick={() => stealGift(player.name)}
-                >
-                  Steal
-                </button>
-                <i className="ms-2 fs-6">
-                  (Steals left: <span>{stealsLeft}</span>)
-                </i>
-              </div>
-            )}
-          </div>
-        )}
-        {isCurrPlayer && (
+        {!isEditable ? (
           <>
-            {roundInfo.type === 'normal' && (
+            {player.gift !== null && (
               <>
-                <button
-                  className="btn btn-sm btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#modal-open-gift"
+                <p
+                  ref={giftLabelRef}
+                  className="m-0 mw-100 text-truncate"
+                  data-bs-toggle="tooltip"
+                  data-bs-title={player.gift.label}
+                  data-bs-placement="bottom"
+                  data-bs-delay='{ "show": 500 }'
                 >
-                  Open gift
-                </button>
-                <ModalOpenGift openGift={openGift} />
+                  {player.gift.label}
+                </p>
+                {stealsLeft > 0 && (
+                  <div>
+                    <button
+                      className="btn btn-sm btn-secondary"
+                      onClick={() => stealGift(player.name)}
+                    >
+                      Steal
+                    </button>
+                    <i className="ms-2 fs-6">
+                      (Steals left: <span>{stealsLeft}</span>)
+                    </i>
+                  </div>
+                )}
               </>
             )}
-            {roundInfo.type === 'finalSwap' && (
-              <button className="btn btn-sm btn-primary" onClick={passTurn}>
-                Pass
-              </button>
+            {isCurrPlayer && (
+              <>
+                {roundInfo.type === 'normal' && (
+                  <>
+                    <button
+                      className="btn btn-sm btn-primary"
+                      data-bs-toggle="modal"
+                      data-bs-target="#modal-open-gift"
+                    >
+                      Open gift
+                    </button>
+                    <ModalOpenGift openGift={openGift} />
+                  </>
+                )}
+                {roundInfo.type === 'finalSwap' && (
+                  <button className="btn btn-sm btn-primary" onClick={passTurn}>
+                    Pass
+                  </button>
+                )}
+              </>
             )}
           </>
+        ) : (
+          <EditGiftForm player={player} updateGift={updateGift} />
         )}
+      </div>
+    </div>
+  )
+}
+
+type EditGiftFormProps = {
+  player: Player
+  updateGift: (player: string, gift: string, currSteals: number) => void
+}
+
+function EditGiftForm({ player, updateGift }: EditGiftFormProps) {
+  const { register, getValues } = useForm({
+    defaultValues: player.gift ?? {
+      label: '',
+      currSteals: 0,
+    },
+  })
+
+  const update = () => {
+    const values = getValues()
+    updateGift(player.name, values.label, values.currSteals)
+  }
+
+  return (
+    <div className="d-flex flex-column gap-2">
+      <input
+        {...register('label', {
+          onChange: update,
+        })}
+      />
+      <div>
+        <label htmlFor="edit-gift.num-steals" className="me-2">
+          # of steals:
+        </label>
+        <input
+          id="edit-gift.num-steals"
+          className="w-2"
+          type="number"
+          min="0"
+          {...register('currSteals', {
+            valueAsNumber: true,
+            onChange: update,
+          })}
+        />
       </div>
     </div>
   )

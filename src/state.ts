@@ -58,6 +58,28 @@ const openGift = (gifts: Gifts, player: Player, gift: string): Gifts => {
   }
 }
 
+const updateGift = (
+  gifts: Gifts,
+  player: Player,
+  gift: string,
+  currSteals: number
+): Gifts => {
+  if (gift.trim().length === 0) {
+    return {
+      ...gifts,
+      [player]: undefined,
+    }
+  }
+
+  return {
+    ...gifts,
+    [player]: {
+      label: gift,
+      currSteals: currSteals,
+    },
+  }
+}
+
 const stealGift = (
   gifts: Gifts,
   currPlayer: Player,
@@ -221,11 +243,20 @@ export const playersReshuffle = (state: PresenterState): PresenterState => {
 }
 
 export const giftOpen =
-  (gift: string, currPlayer: Player) =>
+  (currPlayer: Player, gift: string) =>
   (state: PresenterState): PresenterState => {
     return {
       ...state,
       gifts: openGift(state.gifts, currPlayer, gift),
+    }
+  }
+
+export const giftUpdate =
+  (currPlayer: Player, gift: string, currSteals: number) =>
+  (state: PresenterState): PresenterState => {
+    return {
+      ...state,
+      gifts: updateGift(state.gifts, currPlayer, gift, currSteals),
     }
   }
 

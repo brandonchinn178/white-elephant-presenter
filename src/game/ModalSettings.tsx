@@ -76,8 +76,8 @@ function ConfigForm({
   formState: UseFormReturn<PresenterStateConfig>
 }) {
   return (
-    <div className="col">
-      <div className="row mb-3">
+    <div className="col d-flex flex-column gap-3">
+      <div className="row">
         <label htmlFor="settings.maxSteals" className="col-9 col-form-label">
           Max number of steals
         </label>
@@ -93,7 +93,7 @@ function ConfigForm({
           />
         </div>
       </div>
-      <div className="row mb-3">
+      <div className="row">
         <label
           htmlFor="settings.defaultTimerDurationSecs"
           className="col-9 col-form-label"
@@ -113,7 +113,7 @@ function ConfigForm({
           />
         </div>
       </div>
-      <div className="row mb-3">
+      <div className="row">
         <div className="col">
           <div className="form-check form-check-reverse form-switch">
             <label htmlFor="settings.timerEnabled" className="form-check-label">

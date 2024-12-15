@@ -11,6 +11,7 @@ import {
   getRoundInfo,
   giftOpen,
   giftSteal,
+  giftUpdate,
   passTurn,
   Player,
   playerAdd,
@@ -65,7 +66,10 @@ function PresenterAppGame({
       removePlayer={(player: string) => updateState(playerRemove(player))}
       reshufflePlayers={() => updateState(playersReshuffle)}
       openGift={(gift: string) =>
-        currPlayer !== null && updateState(giftOpen(gift, currPlayer))
+        currPlayer !== null && updateState(giftOpen(currPlayer, gift))
+      }
+      updateGift={(player: string, gift: string, currSteals: number) =>
+        updateState(giftUpdate(player, gift, currSteals))
       }
       stealGift={(targetPlayer: Player) =>
         currPlayer !== null && updateState(giftSteal(currPlayer, targetPlayer))
