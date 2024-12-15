@@ -266,6 +266,7 @@ export const giftSteal =
     return {
       ...state,
       gifts: stealGift(state.gifts, currPlayer, targetPlayer),
+      didFinalSwap: getRoundInfo(state).type === 'finalSwap',
     }
   }
 

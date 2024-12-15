@@ -59,25 +59,26 @@ export function PageGame({
         ))}
       </div>
       <div className="d-flex gap-3 justify-content-center">
-        {!isEditable ? (
-          <>
+        {board.length > 0 &&
+          (!isEditable ? (
+            <>
+              <button
+                className="btn btn-outline-secondary"
+                onClick={() => setEditable(true)}
+              >
+                Edit board
+              </button>
+              <ModalResetGifts {...actions} />
+              <ModalReshuffleOrder {...actions} />
+            </>
+          ) : (
             <button
-              className="btn btn-outline-secondary"
-              onClick={() => setEditable(true)}
+              className="btn btn-success"
+              onClick={() => setEditable(false)}
             >
-              Edit board
+              Lock board
             </button>
-            <ModalResetGifts {...actions} />
-            <ModalReshuffleOrder {...actions} />
-          </>
-        ) : (
-          <button
-            className="btn btn-success"
-            onClick={() => setEditable(false)}
-          >
-            Lock board
-          </button>
-        )}
+          ))}
       </div>
       {timerEnabled && <Timer defaultDurationSecs={defaultTimerDurationSecs} />}
     </div>
@@ -96,7 +97,9 @@ function GameBanner({ roundInfo, ...modalProps }: GameBannerProps) {
 
   return (
     <div className="d-flex justify-content-between">
-      {roundInfo.currPlayer && (
+      {!roundInfo.currPlayer ? (
+        <h3>Add players to start</h3>
+      ) : (
         <h3>
           Current player: <b>{roundInfo.currPlayer}</b>
         </h3>
@@ -202,19 +205,21 @@ function PlayerCard({
                 >
                   {player.gift.label}
                 </p>
-                {stealsLeft > 0 && (
-                  <div>
-                    <button
-                      className="btn btn-sm btn-secondary"
-                      onClick={() => stealGift(player.name)}
-                    >
-                      Steal
-                    </button>
-                    <i className="ms-2 fs-6">
-                      (Steals left: <span>{stealsLeft}</span>)
-                    </i>
-                  </div>
-                )}
+                {roundInfo.type !== 'done' &&
+                  !isCurrPlayer &&
+                  stealsLeft > 0 && (
+                    <div>
+                      <button
+                        className="btn btn-sm btn-secondary"
+                        onClick={() => stealGift(player.name)}
+                      >
+                        Steal
+                      </button>
+                      <i className="ms-2 fs-6">
+                        (Steals left: <span>{stealsLeft}</span>)
+                      </i>
+                    </div>
+                  )}
               </>
             )}
             {isCurrPlayer && (
